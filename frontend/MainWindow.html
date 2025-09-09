@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Messenger</title>
+    <link rel="stylesheet" href="Style.css" id="theme-style">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div class="app-container">
+    <!-- Шестиугольная навигация -->
+    <div class="hex-nav">
+        <div class="hex-button active" data-tab="chat"><i class="fas fa-comment-alt"></i></div>
+        <div class="hex-button" data-tab="users"><i class="fas fa-users"></i></div>
+        <div class="hex-button" data-tab="notifications"><i class="fas fa-bell"></i></div>
+        <div class="hex-button" data-tab="settings"><i class="fas fa-cog"></i></div>
+        <div class="hex-button" data-tab="favorites"><i class="fas fa-star"></i></div>
+        <div class="hex-button" data-tab="new-chat"><i class="fas fa-plus"></i></div>
+    </div>
+
+    <!-- Круглый заголовок -->
+    <div class="circle-header">
+        <div class="channel-info">
+            <div class="channel-icon"><i class="fas fa-hashtag"></i></div>
+            <div>
+                <h2 id="current-chat-name">Дизайн-студия</h2>
+                <p id="current-chat-desc">Обсуждаем креативные идеи</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер сообщений с диагональным разделением -->
+    <div class="messages-container" id="messages-container">
+        <!-- Сообщения будут добавляться динамически -->
+        <div class="message incoming">
+            <div class="message-avatar">А</div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="message-author">Анна Дизайнер</span>
+                    <span class="message-time">12:34</span>
+                </div>
+                <div class="message-text">Привет! Посмотрите на новый концепт интерфейса.</div>
+            </div>
+        </div>
+
+        <div class="message outgoing">
+            <div class="message-avatar">Я</div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="message-author">Вы</span>
+                    <span class="message-time">12:35</span>
+                </div>
+                <div class="message-text">Мне нравится! Особенно нестандартное расположение элементов.</div>
+                <div class="message-status">доставлено</div>
+            </div>
+        </div>
+
+        <div class="message incoming">
+            <div class="message-avatar">М</div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="message-author">Макс Разработчик</span>
+                    <span class="message-time">12:36</span>
+                </div>
+                <div class="message-text">Я уже начал реализовывать этот дизайн.</div>
+            </div>
+        </div>
+
+        <div class="message outgoing">
+            <div class="message-avatar">Я</div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="message-author">Вы</span>
+                    <span class="message-time">12:37</span>
+                </div>
+                <div class="message-text">Отлично! Не забудь про анимации и микровзаимодействия.</div>
+                <div class="message-status">доставлено</div>
+            </div>
+        </div>
+
+        <div class="message incoming">
+            <div class="message-avatar">О</div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="message-author">Оля Маркетолог</span>
+                    <span class="message-time">12:39</span>
+                </div>
+                <div class="message-text">Пользователям точно понравится такой современный подход!</div>
+            </div>
+        </div>
+
+        <div class="message incoming">
+            <div class="message-avatar">И</div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="message-author">Иван Тестировщик</span>
+                    <span class="message-time">12:41</span>
+                </div>
+                <div class="message-text">Нужно будет тщательно протестировать адаптивность на разных устройствах.</div>
+            </div>
+        </div>
+
+        <div class="message outgoing">
+            <div class="message-avatar">Я</div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="message-author">Вы</span>
+                    <span class="message-time">12:42</span>
+                </div>
+                <div class="message-text">Да, это важно. Макс, добавь please тесты на различные разрешения.</div>
+                <div class="message-status">доставлено</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панель ввода в форме волны -->
+    <div class="wave-input">
+        <div class="input-wrapper">
+            <input type="text" id="message-input" placeholder="Введите ваше сообщение...">
+            <div class="input-buttons">
+                <button class="input-btn" id="send-button"><i class="fas fa-paper-plane"></i></button>
+                <button class="input-btn" id="emoji-button"><i class="fas fa-smile"></i></button>
+                <button class="input-btn" id="attach-button"><i class="fas fa-paperclip"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Боковая панель с ромбовидным узором -->
+    <div class="diamond-sidebar">
+        <div class="sidebar-content">
+            <!-- Контент для вкладки чата -->
+            <div class="tab-content" id="chat-tab">
+                <div class="user-card">
+                    <div class="user-avatar">Я</div>
+                    <div class="user-name">Ваше Имя</div>
+                    <div class="user-status">Online</div>
+                </div>
+
+                <div class="online-list">
+                    <h3>В сети — <span id="online-count">5</span></h3>
+                    <div class="online-user">
+                        <div class="user-indicator"></div>
+                        <div>Анна Дизайнер</div>
+                    </div>
+                    <div class="online-user">
+                        <div class="user-indicator"></div>
+                        <div>Макс Разработчик</div>
+                    </div>
+                    <div class="online-user">
+                        <div class="user-indicator"></div>
+                        <div>Оля Маркетолог</div>
+                    </div>
+                    <div class="online-user">
+                        <div class="user-indicator"></div>
+                        <div>Иван Тестировщик</div>
+                    </div>
+                    <div class="online-user">
+                        <div class="user-indicator"></div>
+                        <div>Крис Аналитик</div>
+                    </div>
+                </div>
+
+                <!-- Список чатов -->
+                <div class="chat-list">
+                    <h3>Чаты</h3>
+                    <div class="chat-item active" data-chat-id="0">
+                        <div class="chat-avatar"><i class="fas fa-hashtag"></i></div>
+                        <div class="chat-info">
+                            <div class="chat-name">Дизайн-студия</div>
+                            <div class="chat-last-message">Обсуждаем креативные идеи</div>
+                        </div>
+                        <div class="unread-count">3</div>
+                    </div>
+                    <div class="chat-item" data-chat-id="1">
+                        <div class="chat-avatar"><i class="fas fa-user"></i></div>
+                        <div class="chat-info">
+                            <div class="chat-name">Анна Дизайнер</div>
+                            <div class="chat-last-message">Личные сообщения</div>
+                        </div>
+                        <div class="unread-count">1</div>
+                    </div>
+                    <div class="chat-item" data-chat-id="2">
+                        <div class="chat-avatar"><i class="fas fa-users"></i></div>
+                        <div class="chat-info">
+                            <div class="chat-name">Команда проекта</div>
+                            <div class="chat-last-message">Рабочие вопросы</div>
+                        </div>
+                        <div class="unread-count">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Контент для вкладки пользователей -->
+            <div class="tab-content" id="users-tab" style="display: none;">
+                <h3>Все пользователи</h3>
+                <div class="user-list">
+                    <div class="user-list-item">
+                        <div class="user-avatar-small">А</div>
+                        <div class="user-info">
+                            <div class="user-name">Анна Дизайнер</div>
+                            <div class="user-title">Главный дизайнер</div>
+                        </div>
+                        <button class="user-action-btn">Написать</button>
+                    </div>
+                    <div class="user-list-item">
+                        <div class="user-avatar-small">М</div>
+                        <div class="user-info">
+                            <div class="user-name">Макс Разработчик</div>
+                            <div class="user-title">Frontend разработчик</div>
+                        </div>
+                        <button class="user-action-btn">Написать</button>
+                    </div>
+                    <div class="user-list-item">
+                        <div class="user-avatar-small">О</div>
+                        <div class="user-info">
+                            <div class="user-name">Оля Маркетолог</div>
+                            <div class="user-title">Маркетинг менеджер</div>
+                        </div>
+                        <button class="user-action-btn">Написать</button>
+                    </div>
+                    <div class="user-list-item">
+                        <div class="user-avatar-small">И</div>
+                        <div class="user-info">
+                            <div class="user-name">Иван Тестировщик</div>
+                            <div class="user-title">QA инженер</div>
+                        </div>
+                        <button class="user-action-btn">Написать</button>
+                    </div>
+                    <div class="user-list-item">
+                        <div class="user-avatar-small">К</div>
+                        <div class="user-info">
+                            <div class="user-name">Крис Аналитик</div>
+                            <div class="user-title">Бизнес-аналитик</div>
+                        </div>
+                        <button class="user-action-btn">Написать</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Контент для вкладки уведомлений -->
+            <div class="tab-content" id="notifications-tab" style="display: none;">
+                <h3>Уведомления</h3>
+                <div class="notifications-list">
+                    <div class="notification-item unread">
+                        <div class="notification-icon"><i class="fas fa-at"></i></div>
+                        <div class="notification-content">
+                            <div class="notification-text">Анна упомянула вас в сообщении</div>
+                            <div class="notification-time">5 минут назад</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon"><i class="fas fa-comment"></i></div>
+                        <div class="notification-content">
+                            <div class="notification-text">Новое сообщение в чате "Команда проекта"</div>
+                            <div class="notification-time">15 минут назад</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon"><i class="fas fa-user-plus"></i></div>
+                        <div class="notification-content">
+                            <div class="notification-text">Макс присоединился к чату</div>
+                            <div class="notification-time">Вчера</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon"><i class="fas fa-calendar"></i></div>
+                        <div class="notification-content">
+                            <div class="notification-text">Напоминание: встреча через 1 час</div>
+                            <div class="notification-time">Вчера</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Контент для вкладки избранного -->
+            <div class="tab-content" id="favorites-tab" style="display: none;">
+                <h3>Избранное</h3>
+                <div class="favorites-list">
+                    <div class="favorite-item">
+                        <div class="favorite-icon"><i class="fas fa-bookmark"></i></div>
+                        <div class="favorite-content">
+                            <div class="favorite-title">Важные ссылки</div>
+                            <div class="favorite-desc">Ссылки на дизайн-макеты</div>
+                        </div>
+                    </div>
+                    <div class="favorite-item">
+                        <div class="favorite-icon"><i class="fas fa-bookmark"></i></div>
+                        <div class="favorite-content">
+                            <div class="favorite-title">Креативные идеи</div>
+                            <div class="favorite-desc">Лучшие предложения команды</div>
+                        </div>
+                    </div>
+                    <div class="favorite-item">
+                        <div class="favorite-icon"><i class="fas fa-bookmark"></i></div>
+                        <div class="favorite-content">
+                            <div class="favorite-title">Техническая документация</div>
+                            <div class="favorite-desc">API и руководства</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Контент для вкладки нового чата -->
+            <div class="tab-content" id="new-chat-tab" style="display: none;">
+                <h3>Новый чат</h3>
+                <div class="new-chat-options">
+                    <div class="new-chat-option">
+                        <div class="option-icon"><i class="fas fa-user-plus"></i></div>
+                        <div class="option-title">Личный чат</div>
+                        <div class="option-desc">Начать разговор с одним человеком</div>
+                    </div>
+                    <div class="new-chat-option">
+                        <div class="option-icon"><i class="fas fa-users"></i></div>
+                        <div class="option-title">Групповой чат</div>
+                        <div class="option-desc">Создать чат для нескольких участников</div>
+                    </div>
+                    <div class="new-chat-option">
+                        <div class="option-icon"><i class="fas fa-hashtag"></i></div>
+                        <div class="option-title">Канал</div>
+                        <div class="option-desc">Создать публичный канал</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно настроек -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Настройки</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <label>Тема оформления</label>
+                    <select id="theme-select">
+                        <option value="default">По умолчанию</option>
+                        <option value="dark">Темная</option>
+                        <option value="light">Светлая</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>Уведомления</label>
+                    <input type="checkbox" id="notifications-toggle" checked>
+                </div>
+                <div class="setting-item">
+                    <label>Звуки сообщений</label>
+                    <input type="checkbox" id="sounds-toggle" checked>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const messagesContainer = document.getElementById('messages-container');
+        const themeStyle = document.getElementById('theme-style');
+        const themeSelect = document.getElementById('theme-select');
+
+        // Загрузка сохраненной темы из localStorage
+        const savedTheme = localStorage.getItem('theme') || 'default';
+        themeSelect.value = savedTheme;
+        changeTheme(savedTheme);
+
+        // Функция смены темы
+        function changeTheme(theme) {
+            let themeFile = 'Style.css';
+
+            if (theme === 'dark') {
+                themeFile = 'StyleBlack.css';
+            } else if (theme === 'light') {
+                themeFile = 'StyleWhite.css';
+            }
+
+            themeStyle.href = themeFile;
+            localStorage.setItem('theme', theme);
+        }
+
+        // Обработчик изменения темы
+        themeSelect.addEventListener('change', function() {
+            changeTheme(this.value);
+        });
+
+        // Функция переключения между вкладками
+        function switchTab(tabName) {
+            // Скрыть все вкладки
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+
+            // Показать выбранную вкладку
+            const activeTab = document.getElementById(`${tabName}-tab`);
+            if (activeTab) {
+                activeTab.style.display = 'block';
+            }
+        }
+
+        // Функция отправки сообщения
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (messageText === '') return;
+
+            // Создаем новое сообщение
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message outgoing new';
+            messageElement.innerHTML = `
+                <div class="message-avatar">Я</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">Вы</span>
+                        <span class="message-time">${getCurrentTime()}</span>
+                    </div>
+                    <div class="message-text">${messageText}</div>
+                    <div class="message-status">доставлено</div>
+                </div>
+            `;
+
+            // Добавляем сообщение в контейнер
+            messagesContainer.appendChild(messageElement);
+
+            // Прокручиваем к новому сообщению
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Очищаем поле ввода
+            messageInput.value = '';
+
+            // Через некоторое время убираем анимацию "нового сообщения"
+            setTimeout(() => {
+                messageElement.classList.remove('new');
+            }, 1500);
+
+            // Имитация ответа через 1-3 секунды
+            setTimeout(() => {
+                simulateReply();
+            }, 1000 + Math.random() * 2000);
+        }
+
+        // Функция получения текущего времени
+        function getCurrentTime() {
+            const now = new Date();
+            return now.getHours().toString().padStart(2, '0') + ':' +
+                   now.getMinutes().toString().padStart(2, '0');
+        }
+
+        // Функция имитации ответа
+        function simulateReply() {
+            const users = ['Анна Дизайнер', 'Макс Разработчик', 'Оля Маркетолог', 'Иван Тестировщик', 'Крис Аналитик'];
+            const user = users[Math.floor(Math.random() * users.length)];
+            const initial = user.charAt(0);
+
+            const replies = [
+                'Отличная идея!',
+                'Я уже работаю над этим.',
+                'Интересное предложение, нужно обсудить детали.',
+                'Это повысит вовлеченность пользователей.',
+                'Нужно протестировать перед релизом.',
+                'У меня есть несколько предложений по улучшению.',
+                'Давайте обсудим это на созвоне.',
+                'Я как раз хотел предложить нечто подобное!'
+            ];
+
+            const reply = replies[Math.floor(Math.random() * replies.length)];
+
+            // Создаем ответное сообщение
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message incoming new';
+            messageElement.innerHTML = `
+                <div class="message-avatar">${initial}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${user}</span>
+                        <span class="message-time">${getCurrentTime()}</span>
+                    </div>
+                    <div class="message-text">${reply}</div>
+                </div>
+            `;
+
+            // Добавляем сообщение в контейнер
+            messagesContainer.appendChild(messageElement);
+
+            // Прокручиваем к новому сообщению
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Через некоторое время убираем анимацию "нового сообщения"
+            setTimeout(() => {
+                messageElement.classList.remove('new');
+            }, 1500);
+        }
+
+        // Обработчики событий
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Обработчики для переключения чатов
+        document.querySelectorAll('.chat-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                const chatId = this.getAttribute('data-chat-id');
+                const chatNames = ['Дизайн-студия', 'Анна Дизайнер', 'Команда проекта'];
+                const chatDescriptions = ['Обсуждаем креативные идеи', 'Личные сообщения', 'Рабочие вопросы'];
+
+                document.getElementById('current-chat-name').textContent = chatNames[chatId];
+                document.getElementById('current-chat-desc').textContent = chatDescriptions[chatId];
+            });
+        });
+
+        // Обработчики для шестиугольных кнопок
+        document.querySelectorAll('.hex-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const tab = this.getAttribute('data-tab');
+
+                if (tab === 'settings') {
+                    document.getElementById('settings-modal').style.display = 'block';
+                } else {
+                    // Переключение активной кнопки
+                    document.querySelectorAll('.hex-button').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Переключение содержимого боковой панели
+                    switchTab(tab);
+                }
+            });
+        });
+
+        // Закрытие модального окна
+        document.querySelector('.close').addEventListener('click', function() {
+            document.getElementById('settings-modal').style.display = 'none';
+        });
+
+        // Закрытие модального окна при клике вне его
+        window.addEventListener('click', function(event) {
+            if (event.target === document.getElementById('settings-modal')) {
+                document.getElementById('settings-modal').style.display = 'none';
+            }
+        });
+
+        // Прокрутка к последнему сообщению при загрузке
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+</script>
+</body>
+</html>
