@@ -6,10 +6,69 @@
     <title>Nexus Messenger</title>
     <link rel="stylesheet" href="Style.css" id="theme-style">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Панель смайликов */
+        #emoji-panel {
+          position: absolute;
+          bottom: 70px;
+          right: 50px;
+          background: var(--panel);
+          border-radius: 10px;
+          padding: 10px;
+          display: none;
+          flex-wrap: wrap;
+          max-width: 220px;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+          z-index: 100;
+        }
+        #emoji-panel span {
+          cursor: pointer;
+          padding: 5px;
+          font-size: 20px;
+        }
+        #emoji-panel span:hover {
+          background: var(--accent);
+          border-radius: 5px;
+        }
+        /* Прикреплённый файл */
+        .media-attachment {
+          margin-top: 8px;
+          border-radius: 12px;
+          overflow: hidden;
+          max-width: 250px;
+        }
+        .media-attachment img {
+          width: 100%;
+          height: auto;
+          display: block;
+        }
+        audio {
+          margin-top: 8px;
+          width: 200px;
+        }
+        /* Анимация записи */
+        #recording-indicator {
+          display: none;
+          position: absolute;
+          bottom: 80px;
+          right: 60px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: red;
+          animation: pulse 1s infinite;
+          z-index: 200;
+        }
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.5); opacity: 0.5; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
 </head>
-<body>
+<body class="dark">
 <div class="app-container">
-    <!-- Шестиугольная навигация -->
+    <!-- Навигация -->
     <div class="hex-nav">
         <div class="hex-button active" data-tab="chat"><i class="fas fa-comment-alt"></i></div>
         <div class="hex-button" data-tab="users"><i class="fas fa-users"></i></div>
@@ -19,102 +78,21 @@
         <div class="hex-button" data-tab="new-chat"><i class="fas fa-plus"></i></div>
     </div>
 
-    <!-- Круглый заголовок -->
+    <!-- Заголовок -->
     <div class="circle-header">
         <div class="channel-info">
             <div class="channel-icon"><i class="fas fa-hashtag"></i></div>
             <div>
-                <h2 id="current-chat-name">Дизайн-студия</h2>
-                <p id="current-chat-desc">Обсуждаем креативные идеи</p>
+                <h2 id="current-chat-name">Общий чат</h2>
+                <p id="current-chat-desc">Добро пожаловать в Nexus Messenger</p>
             </div>
         </div>
     </div>
 
-    <!-- Контейнер сообщений с диагональным разделением -->
-    <div class="messages-container" id="messages-container">
-        <!-- Сообщения будут добавляться динамически -->
-        <div class="message incoming">
-            <div class="message-avatar">А</div>
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="message-author">Анна Дизайнер</span>
-                    <span class="message-time">12:34</span>
-                </div>
-                <div class="message-text">Привет! Посмотрите на новый концепт интерфейса.</div>
-            </div>
-        </div>
+    <!-- Сообщения -->
+    <div class="messages-container" id="messages-container"></div>
 
-        <div class="message outgoing">
-            <div class="message-avatar">Я</div>
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="message-author">Вы</span>
-                    <span class="message-time">12:35</span>
-                </div>
-                <div class="message-text">Мне нравится! Особенно нестандартное расположение элементов.</div>
-                <div class="message-status">доставлено</div>
-            </div>
-        </div>
-
-        <div class="message incoming">
-            <div class="message-avatar">М</div>
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="message-author">Макс Разработчик</span>
-                    <span class="message-time">12:36</span>
-                </div>
-                <div class="message-text">Я уже начал реализовывать этот дизайн.</div>
-            </div>
-        </div>
-
-        <div class="message outgoing">
-            <div class="message-avatar">Я</div>
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="message-author">Вы</span>
-                    <span class="message-time">12:37</span>
-                </div>
-                <div class="message-text">Отлично! Не забудь про анимации и микровзаимодействия.</div>
-                <div class="message-status">доставлено</div>
-            </div>
-        </div>
-
-        <div class="message incoming">
-            <div class="message-avatar">О</div>
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="message-author">Оля Маркетолог</span>
-                    <span class="message-time">12:39</span>
-                </div>
-                <div class="message-text">Пользователям точно понравится такой современный подход!</div>
-            </div>
-        </div>
-
-        <div class="message incoming">
-            <div class="message-avatar">И</div>
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="message-author">Иван Тестировщик</span>
-                    <span class="message-time">12:41</span>
-                </div>
-                <div class="message-text">Нужно будет тщательно протестировать адаптивность на разных устройствах.</div>
-            </div>
-        </div>
-
-        <div class="message outgoing">
-            <div class="message-avatar">Я</div>
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="message-author">Вы</span>
-                    <span class="message-time">12:42</span>
-                </div>
-                <div class="message-text">Да, это важно. Макс, добавь please тесты на различные разрешения.</div>
-                <div class="message-status">доставлено</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Панель ввода в форме волны -->
+    <!-- Панель ввода -->
     <div class="wave-input">
         <div class="input-wrapper">
             <input type="text" id="message-input" placeholder="Введите ваше сообщение...">
@@ -122,210 +100,48 @@
                 <button class="input-btn" id="send-button"><i class="fas fa-paper-plane"></i></button>
                 <button class="input-btn" id="emoji-button"><i class="fas fa-smile"></i></button>
                 <button class="input-btn" id="attach-button"><i class="fas fa-paperclip"></i></button>
+                <button class="input-btn" id="mic-button"><i class="fas fa-microphone"></i></button>
+                <input type="file" id="file-input" style="display:none" multiple>
             </div>
         </div>
+        <div id="emoji-panel"></div>
+        <div id="recording-indicator"></div>
     </div>
 
-    <!-- Боковая панель с ромбовидным узором -->
+    <!-- Боковая панель -->
     <div class="diamond-sidebar">
         <div class="sidebar-content">
-            <!-- Контент для вкладки чата -->
             <div class="tab-content" id="chat-tab">
                 <div class="user-card">
                     <div class="user-avatar">Я</div>
-                    <div class="user-name">Ваше Имя</div>
+                    <div class="user-name" id="user-name">Пользователь</div>
                     <div class="user-status">Online</div>
                 </div>
-
-                <div class="online-list">
-                    <h3>В сети — <span id="online-count">5</span></h3>
-                    <div class="online-user">
-                        <div class="user-indicator"></div>
-                        <div>Анна Дизайнер</div>
-                    </div>
-                    <div class="online-user">
-                        <div class="user-indicator"></div>
-                        <div>Макс Разработчик</div>
-                    </div>
-                    <div class="online-user">
-                        <div class="user-indicator"></div>
-                        <div>Оля Маркетолог</div>
-                    </div>
-                    <div class="online-user">
-                        <div class="user-indicator"></div>
-                        <div>Иван Тестировщик</div>
-                    </div>
-                    <div class="online-user">
-                        <div class="user-indicator"></div>
-                        <div>Крис Аналитик</div>
-                    </div>
-                </div>
-
-                <!-- Список чатов -->
                 <div class="chat-list">
                     <h3>Чаты</h3>
-                    <div class="chat-item active" data-chat-id="0">
-                        <div class="chat-avatar"><i class="fas fa-hashtag"></i></div>
-                        <div class="chat-info">
-                            <div class="chat-name">Дизайн-студия</div>
-                            <div class="chat-last-message">Обсуждаем креативные идеи</div>
-                        </div>
-                        <div class="unread-count">3</div>
-                    </div>
-                    <div class="chat-item" data-chat-id="1">
-                        <div class="chat-avatar"><i class="fas fa-user"></i></div>
-                        <div class="chat-info">
-                            <div class="chat-name">Анна Дизайнер</div>
-                            <div class="chat-last-message">Личные сообщения</div>
-                        </div>
-                        <div class="unread-count">1</div>
-                    </div>
-                    <div class="chat-item" data-chat-id="2">
-                        <div class="chat-avatar"><i class="fas fa-users"></i></div>
-                        <div class="chat-info">
-                            <div class="chat-name">Команда проекта</div>
-                            <div class="chat-last-message">Рабочие вопросы</div>
-                        </div>
-                        <div class="unread-count">5</div>
-                    </div>
+                    <div class="chat-item active" data-chat="Общий чат">💬 Общий чат</div>
                 </div>
             </div>
-
-            <!-- Контент для вкладки пользователей -->
-            <div class="tab-content" id="users-tab" style="display: none;">
+            <div class="tab-content" id="users-tab" style="display:none;">
                 <h3>Все пользователи</h3>
-                <div class="user-list">
-                    <div class="user-list-item">
-                        <div class="user-avatar-small">А</div>
-                        <div class="user-info">
-                            <div class="user-name">Анна Дизайнер</div>
-                            <div class="user-title">Главный дизайнер</div>
-                        </div>
-                        <button class="user-action-btn">Написать</button>
-                    </div>
-                    <div class="user-list-item">
-                        <div class="user-avatar-small">М</div>
-                        <div class="user-info">
-                            <div class="user-name">Макс Разработчик</div>
-                            <div class="user-title">Frontend разработчик</div>
-                        </div>
-                        <button class="user-action-btn">Написать</button>
-                    </div>
-                    <div class="user-list-item">
-                        <div class="user-avatar-small">О</div>
-                        <div class="user-info">
-                            <div class="user-name">Оля Маркетолог</div>
-                            <div class="user-title">Маркетинг менеджер</div>
-                        </div>
-                        <button class="user-action-btn">Написать</button>
-                    </div>
-                    <div class="user-list-item">
-                        <div class="user-avatar-small">И</div>
-                        <div class="user-info">
-                            <div class="user-name">Иван Тестировщик</div>
-                            <div class="user-title">QA инженер</div>
-                        </div>
-                        <button class="user-action-btn">Написать</button>
-                    </div>
-                    <div class="user-list-item">
-                        <div class="user-avatar-small">К</div>
-                        <div class="user-info">
-                            <div class="user-name">Крис Аналитик</div>
-                            <div class="user-title">Бизнес-аналитик</div>
-                        </div>
-                        <button class="user-action-btn">Написать</button>
-                    </div>
-                </div>
+                <p>Список пользователей пока тестовый</p>
             </div>
-
-            <!-- Контент для вкладки уведомлений -->
-            <div class="tab-content" id="notifications-tab" style="display: none;">
+            <div class="tab-content" id="notifications-tab" style="display:none;">
                 <h3>Уведомления</h3>
-                <div class="notifications-list">
-                    <div class="notification-item unread">
-                        <div class="notification-icon"><i class="fas fa-at"></i></div>
-                        <div class="notification-content">
-                            <div class="notification-text">Анна упомянула вас в сообщении</div>
-                            <div class="notification-time">5 минут назад</div>
-                        </div>
-                    </div>
-                    <div class="notification-item">
-                        <div class="notification-icon"><i class="fas fa-comment"></i></div>
-                        <div class="notification-content">
-                            <div class="notification-text">Новое сообщение в чате "Команда проекта"</div>
-                            <div class="notification-time">15 минут назад</div>
-                        </div>
-                    </div>
-                    <div class="notification-item">
-                        <div class="notification-icon"><i class="fas fa-user-plus"></i></div>
-                        <div class="notification-content">
-                            <div class="notification-text">Макс присоединился к чату</div>
-                            <div class="notification-time">Вчера</div>
-                        </div>
-                    </div>
-                    <div class="notification-item">
-                        <div class="notification-icon"><i class="fas fa-calendar"></i></div>
-                        <div class="notification-content">
-                            <div class="notification-text">Напоминание: встреча через 1 час</div>
-                            <div class="notification-time">Вчера</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="notifications-list" id="notifications-list"><p>Нет уведомлений</p></div>
             </div>
-
-            <!-- Контент для вкладки избранного -->
-            <div class="tab-content" id="favorites-tab" style="display: none;">
+            <div class="tab-content" id="favorites-tab" style="display:none;">
                 <h3>Избранное</h3>
-                <div class="favorites-list">
-                    <div class="favorite-item">
-                        <div class="favorite-icon"><i class="fas fa-bookmark"></i></div>
-                        <div class="favorite-content">
-                            <div class="favorite-title">Важные ссылки</div>
-                            <div class="favorite-desc">Ссылки на дизайн-макеты</div>
-                        </div>
-                    </div>
-                    <div class="favorite-item">
-                        <div class="favorite-icon"><i class="fas fa-bookmark"></i></div>
-                        <div class="favorite-content">
-                            <div class="favorite-title">Креативные идеи</div>
-                            <div class="favorite-desc">Лучшие предложения команды</div>
-                        </div>
-                    </div>
-                    <div class="favorite-item">
-                        <div class="favorite-icon"><i class="fas fa-bookmark"></i></div>
-                        <div class="favorite-content">
-                            <div class="favorite-title">Техническая документация</div>
-                            <div class="favorite-desc">API и руководства</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="favorites-list" id="favorites-list"><p>Пока пусто</p></div>
             </div>
-
-            <!-- Контент для вкладки нового чата -->
-            <div class="tab-content" id="new-chat-tab" style="display: none;">
+            <div class="tab-content" id="new-chat-tab" style="display:none;">
                 <h3>Новый чат</h3>
-                <div class="new-chat-options">
-                    <div class="new-chat-option">
-                        <div class="option-icon"><i class="fas fa-user-plus"></i></div>
-                        <div class="option-title">Личный чат</div>
-                        <div class="option-desc">Начать разговор с одним человеком</div>
-                    </div>
-                    <div class="new-chat-option">
-                        <div class="option-icon"><i class="fas fa-users"></i></div>
-                        <div class="option-title">Групповой чат</div>
-                        <div class="option-desc">Создать чат для нескольких участников</div>
-                    </div>
-                    <div class="new-chat-option">
-                        <div class="option-icon"><i class="fas fa-hashtag"></i></div>
-                        <div class="option-title">Канал</div>
-                        <div class="option-desc">Создать публичный канал</div>
-                    </div>
-                </div>
+                <button class="user-action-btn" id="create-chat-btn">Создать чат</button>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно настроек -->
+    <!-- Настройки -->
     <div class="modal" id="settings-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -336,18 +152,12 @@
                 <div class="setting-item">
                     <label>Тема оформления</label>
                     <select id="theme-select">
-                        <option value="default">По умолчанию</option>
-                        <option value="dark">Темная</option>
+                        <option value="dark">Тёмная</option>
                         <option value="light">Светлая</option>
                     </select>
                 </div>
                 <div class="setting-item">
-                    <label>Уведомления</label>
-                    <input type="checkbox" id="notifications-toggle" checked>
-                </div>
-                <div class="setting-item">
-                    <label>Звуки сообщений</label>
-                    <input type="checkbox" id="sounds-toggle" checked>
+                    <button class="user-action-btn" id="logout-btn">Выйти</button>
                 </div>
             </div>
         </div>
@@ -355,198 +165,178 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        const messagesContainer = document.getElementById('messages-container');
-        const themeStyle = document.getElementById('theme-style');
-        const themeSelect = document.getElementById('theme-select');
+    document.addEventListener("DOMContentLoaded", () => {
+      const messagesContainer = document.getElementById("messages-container");
+      const messageInput = document.getElementById("message-input");
+      const sendButton = document.getElementById("send-button");
+      const emojiButton = document.getElementById("emoji-button");
+      const attachButton = document.getElementById("attach-button");
+      const micButton = document.getElementById("mic-button");
+      const fileInput = document.getElementById("file-input");
+      const emojiPanel = document.getElementById("emoji-panel");
+      const recordingIndicator = document.getElementById("recording-indicator");
+      const favoritesList = document.getElementById("favorites-list");
+      const notificationsList = document.getElementById("notifications-list");
+      const themeSelect = document.getElementById("theme-select");
 
-        // Загрузка сохраненной темы из localStorage
-        const savedTheme = localStorage.getItem('theme') || 'default';
-        themeSelect.value = savedTheme;
-        changeTheme(savedTheme);
+      let mediaRecorder;
+      let audioChunks = [];
 
-        // Функция смены темы
-        function changeTheme(theme) {
-            let themeFile = 'Style.css';
+      const currentUser = localStorage.getItem("username") || "Гость";
+      document.getElementById("user-name").textContent = currentUser;
 
-            if (theme === 'dark') {
-                themeFile = 'StyleBlack.css';
-            } else if (theme === 'light') {
-                themeFile = 'StyleWhite.css';
-            }
+      function getCurrentTime() {
+        const now = new Date();
+        return now.getHours().toString().padStart(2, "0") + ":" +
+               now.getMinutes().toString().padStart(2, "0");
+      }
 
-            themeStyle.href = themeFile;
-            localStorage.setItem('theme', theme);
+      function addMessage(user, text, type, attachment=null) {
+        const msg = document.createElement("div");
+        msg.className = `message ${type} new`;
+        let attachHtml = "";
+        if (attachment) {
+          if (attachment.type === "audio") {
+            attachHtml = `<audio controls src="${attachment.url}"></audio>`;
+          } else if (attachment.type.startsWith("image/")) {
+            attachHtml = `<div class="media-attachment"><img src="${attachment.url}"></div>`;
+          } else {
+            attachHtml = `<div class="media-attachment"><a href="${attachment.url}" download>${attachment.name}</a></div>`;
+          }
         }
-
-        // Обработчик изменения темы
-        themeSelect.addEventListener('change', function() {
-            changeTheme(this.value);
-        });
-
-        // Функция переключения между вкладками
-        function switchTab(tabName) {
-            // Скрыть все вкладки
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.style.display = 'none';
-            });
-
-            // Показать выбранную вкладку
-            const activeTab = document.getElementById(`${tabName}-tab`);
-            if (activeTab) {
-                activeTab.style.display = 'block';
-            }
-        }
-
-        // Функция отправки сообщения
-        function sendMessage() {
-            const messageText = messageInput.value.trim();
-            if (messageText === '') return;
-
-            // Создаем новое сообщение
-            const messageElement = document.createElement('div');
-            messageElement.className = 'message outgoing new';
-            messageElement.innerHTML = `
-                <div class="message-avatar">Я</div>
-                <div class="message-content">
-                    <div class="message-header">
-                        <span class="message-author">Вы</span>
-                        <span class="message-time">${getCurrentTime()}</span>
-                    </div>
-                    <div class="message-text">${messageText}</div>
-                    <div class="message-status">доставлено</div>
-                </div>
-            `;
-
-            // Добавляем сообщение в контейнер
-            messagesContainer.appendChild(messageElement);
-
-            // Прокручиваем к новому сообщению
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-            // Очищаем поле ввода
-            messageInput.value = '';
-
-            // Через некоторое время убираем анимацию "нового сообщения"
-            setTimeout(() => {
-                messageElement.classList.remove('new');
-            }, 1500);
-
-            // Имитация ответа через 1-3 секунды
-            setTimeout(() => {
-                simulateReply();
-            }, 1000 + Math.random() * 2000);
-        }
-
-        // Функция получения текущего времени
-        function getCurrentTime() {
-            const now = new Date();
-            return now.getHours().toString().padStart(2, '0') + ':' +
-                   now.getMinutes().toString().padStart(2, '0');
-        }
-
-        // Функция имитации ответа
-        function simulateReply() {
-            const users = ['Анна Дизайнер', 'Макс Разработчик', 'Оля Маркетолог', 'Иван Тестировщик', 'Крис Аналитик'];
-            const user = users[Math.floor(Math.random() * users.length)];
-            const initial = user.charAt(0);
-
-            const replies = [
-                'Отличная идея!',
-                'Я уже работаю над этим.',
-                'Интересное предложение, нужно обсудить детали.',
-                'Это повысит вовлеченность пользователей.',
-                'Нужно протестировать перед релизом.',
-                'У меня есть несколько предложений по улучшению.',
-                'Давайте обсудим это на созвоне.',
-                'Я как раз хотел предложить нечто подобное!'
-            ];
-
-            const reply = replies[Math.floor(Math.random() * replies.length)];
-
-            // Создаем ответное сообщение
-            const messageElement = document.createElement('div');
-            messageElement.className = 'message incoming new';
-            messageElement.innerHTML = `
-                <div class="message-avatar">${initial}</div>
-                <div class="message-content">
-                    <div class="message-header">
-                        <span class="message-author">${user}</span>
-                        <span class="message-time">${getCurrentTime()}</span>
-                    </div>
-                    <div class="message-text">${reply}</div>
-                </div>
-            `;
-
-            // Добавляем сообщение в контейнер
-            messagesContainer.appendChild(messageElement);
-
-            // Прокручиваем к новому сообщению
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-            // Через некоторое время убираем анимацию "нового сообщения"
-            setTimeout(() => {
-                messageElement.classList.remove('new');
-            }, 1500);
-        }
-
-        // Обработчики событий
-        sendButton.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        // Обработчики для переключения чатов
-        document.querySelectorAll('.chat-item').forEach(item => {
-            item.addEventListener('click', function() {
-                document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-
-                const chatId = this.getAttribute('data-chat-id');
-                const chatNames = ['Дизайн-студия', 'Анна Дизайнер', 'Команда проекта'];
-                const chatDescriptions = ['Обсуждаем креативные идеи', 'Личные сообщения', 'Рабочие вопросы'];
-
-                document.getElementById('current-chat-name').textContent = chatNames[chatId];
-                document.getElementById('current-chat-desc').textContent = chatDescriptions[chatId];
-            });
-        });
-
-        // Обработчики для шестиугольных кнопок
-        document.querySelectorAll('.hex-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const tab = this.getAttribute('data-tab');
-
-                if (tab === 'settings') {
-                    document.getElementById('settings-modal').style.display = 'block';
-                } else {
-                    // Переключение активной кнопки
-                    document.querySelectorAll('.hex-button').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // Переключение содержимого боковой панели
-                    switchTab(tab);
-                }
-            });
-        });
-
-        // Закрытие модального окна
-        document.querySelector('.close').addEventListener('click', function() {
-            document.getElementById('settings-modal').style.display = 'none';
-        });
-
-        // Закрытие модального окна при клике вне его
-        window.addEventListener('click', function(event) {
-            if (event.target === document.getElementById('settings-modal')) {
-                document.getElementById('settings-modal').style.display = 'none';
-            }
-        });
-
-        // Прокрутка к последнему сообщению при загрузке
+        msg.innerHTML = `
+          <div class="message-avatar">${user.charAt(0)}</div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-author">${user}</span>
+              <span class="message-time">${getCurrentTime()}</span>
+            </div>
+            ${text ? `<div class="message-text">${text}</div>` : ""}
+            ${attachHtml}
+            <div class="message-status">
+              <button onclick="addToFavorites('${text}')">⭐</button>
+            </div>
+          </div>
+        `;
+        messagesContainer.appendChild(msg);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+        addMessage(currentUser, text, "outgoing");
+        messageInput.value = "";
+      }
+      sendButton.addEventListener("click", sendMessage);
+      messageInput.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+
+      window.addToFavorites = function(text) {
+        if (!text) return;
+        favoritesList.innerHTML += `<div class="favorite-item">${text}</div>`;
+      }
+
+      function addNotification(text) {
+        notificationsList.innerHTML = `<div class="notification-item">${text}</div>` + notificationsList.innerHTML;
+      }
+
+      const emojis = ["😀","😂","😍","😎","😢","😡","👍","🙏","🔥","🎉"];
+      emojis.forEach(e => {
+        const span = document.createElement("span");
+        span.textContent = e;
+        span.addEventListener("click", () => {
+          messageInput.value += e;
+          emojiPanel.style.display = "none";
+        });
+        emojiPanel.appendChild(span);
+      });
+      emojiButton.addEventListener("click", () => {
+        emojiPanel.style.display = emojiPanel.style.display === "flex" ? "none" : "flex";
+        emojiPanel.style.display = "flex";
+      });
+
+      attachButton.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", () => {
+        for (const file of fileInput.files) {
+          const reader = new FileReader();
+          reader.onload = e => {
+            addMessage(currentUser, "Файл:", "outgoing", {
+              url: e.target.result,
+              type: file.type,
+              name: file.name
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+        fileInput.value = "";
+      });
+
+      // Голосовые сообщения с анимацией
+      micButton.addEventListener("click", async () => {
+        if (!mediaRecorder || mediaRecorder.state === "inactive") {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.start();
+            micButton.style.background = "red";
+            recordingIndicator.style.display = "block";
+            mediaRecorder.addEventListener("dataavailable", e => {
+              audioChunks.push(e.data);
+            });
+            mediaRecorder.addEventListener("stop", () => {
+              const blob = new Blob(audioChunks, { type: "audio/webm" });
+              const url = URL.createObjectURL(blob);
+              addMessage(currentUser, "", "outgoing", { url, type: "audio" });
+              micButton.style.background = "var(--primary)";
+              recordingIndicator.style.display = "none";
+            });
+          } catch (err) {
+            alert("Ошибка доступа к микрофону");
+            console.error(err);
+          }
+        } else {
+          mediaRecorder.stop();
+        }
+      });
+
+      function changeTheme(theme) {
+        document.body.classList.remove("dark","light");
+        document.body.classList.add(theme);
+        localStorage.setItem("theme", theme);
+      }
+      themeSelect.value = localStorage.getItem("theme") || "dark";
+      changeTheme(themeSelect.value);
+      themeSelect.addEventListener("change", () => changeTheme(themeSelect.value));
+
+      document.querySelectorAll(".hex-button").forEach(btn => {
+        btn.addEventListener("click", function() {
+          const tab = this.getAttribute("data-tab");
+          if (tab === "settings") {
+            document.getElementById("settings-modal").style.display = "block";
+          } else {
+            document.querySelectorAll(".hex-button").forEach(b => b.classList.remove("active"));
+            this.classList.add("active");
+            document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
+            document.getElementById(`${tab}-tab`).style.display = "block";
+          }
+        });
+      });
+
+      document.querySelector(".close").addEventListener("click", () => {
+        document.getElementById("settings-modal").style.display = "none";
+      });
+      document.getElementById("logout-btn").addEventListener("click", () => {
+        localStorage.removeItem("username");
+        window.location.href = "login.html";
+      });
+      document.getElementById("create-chat-btn").addEventListener("click", () => {
+        const name = prompt("Введите название чата:");
+        if (name) {
+          document.querySelector(".chat-list").innerHTML += `<div class="chat-item" data-chat="${name}">💬 ${name}</div>`;
+          addNotification(`Создан чат: ${name}`);
+        }
+      });
     });
 </script>
 </body>
