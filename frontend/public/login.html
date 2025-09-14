@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход - Nexus Messenger</title>
+    <link rel="stylesheet" href="Style.css">
+</head>
+<body class="login-body">
+<div class="login-container">
+    <h1>Nexus Messenger</h1>
+    <div class="login-card">
+        <input type="text" id="username" placeholder="Имя пользователя">
+        <input type="password" id="password" placeholder="Пароль">
+        <button id="login-btn">Войти</button>
+        <p>Нет аккаунта? <a href="register.html">Зарегистрироваться</a></p>
+    </div>
+</div>
+
+<script>
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem("username", data.username);
+        localStorage.setItem("nickname", data.nickname);
+        window.location.href = "MainWindow.html";
+      } else {
+        alert(data.error);
+      }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Messenger</title>
+    <link rel="stylesheet" href="Style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body class="dark">
+<div class="app-container">
+    <!-- Навигация -->
+    <div class="hex-nav">
+        <div class="hex-button active" data-tab="chat"><i class="fas fa-comment-alt"></i></div>
+        <div class="hex-button" data-tab="users"><i class="fas fa-users"></i></div>
+        <div class="hex-button" data-tab="notifications"><i class="fas fa-bell"></i></div>
+        <div class="hex-button" data-tab="favorites"><i class="fas fa-star"></i></div>
+        <div class="hex-button" data-tab="new-chat"><i class="fas fa-plus"></i></div>
+        <div class="hex-button" data-tab="settings"><i class="fas fa-cog"></i></div>
+    </div>
+
+    <!-- Заголовок -->
+    <div class="circle-header">
+        <div class="channel-info">
+            <div class="channel-icon" id="chat-avatar"><i class="fas fa-hashtag"></i></div>
+            <div>
+                <h2 id="current-chat-name">Общий чат</h2>
+                <p id="current-chat-desc">Добро пожаловать в Nexus Messenger</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Сообщения -->
+    <div class="messages-container" id="messages-container"></div>
+
+    <!-- Панель ввода -->
+    <div class="wave-input">
+        <div class="input-wrapper">
+            <input type="text" id="message-input" placeholder="Введите ваше сообщение...">
+            <div class="input-buttons">
+                <button class="input-btn" id="send-button"><i class="fas fa-paper-plane"></i></button>
+                <button class="input-btn" id="emoji-button"><i class="fas fa-smile"></i></button>
+                <button class="input-btn" id="attach-button"><i class="fas fa-paperclip"></i></button>
+                <button class="input-btn" id="mic-button"><i class="fas fa-microphone"></i></button>
+                <input type="file" id="file-input" style="display:none" multiple>
+            </div>
+        </div>
+        <div id="emoji-panel"></div>
+        <div id="recording-indicator"></div>
+    </div>
+
+    <!-- Боковая панель -->
+    <div class="diamond-sidebar">
+        <div class="sidebar-content">
+            <!-- Чаты -->
+            <div class="tab-content" id="chat-tab">
+                <div class="user-card">
+                    <div class="user-avatar">Я</div>
+                    <div class="user-name" id="user-name">Пользователь</div>
+                    <div class="user-status">Online</div>
+                </div>
+                <div class="chat-list">
+                    <h3>Чаты</h3>
+                    <div class="chat-item active" data-chat="Общий чат">💬 Общий чат</div>
+                </div>
+            </div>
+
+            <!-- Пользователи -->
+            <div class="tab-content" id="users-tab" style="display:none;">
+                <h3>Все пользователи</h3>
+                <input type="text" id="search-user" placeholder="Поиск по @тегу"
+                       style="width:100%;padding:8px;margin-bottom:10px;border-radius:8px;">
+                <div class="user-list" id="user-list"></div>
+            </div>
+
+            <!-- Уведомления -->
+            <div class="tab-content" id="notifications-tab" style="display:none;">
+                <h3>Уведомления</h3>
+                <div class="notifications-list" id="notifications-list"><p>Нет уведомлений</p></div>
+            </div>
+
+            <!-- Избранное -->
+            <div class="tab-content" id="favorites-tab" style="display:none;">
+                <h3>Избранное</h3>
+                <div class="favorites-list" id="favorites-list"><p>Пока пусто</p></div>
+            </div>
+
+            <!-- Новый чат -->
+            <div class="tab-content" id="new-chat-tab" style="display:none;">
+                <h3>Новый чат</h3>
+                <button class="user-action-btn" id="create-chat-btn">Создать чат</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Настройки -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Настройки</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <label>Тема оформления</label>
+                    <select id="theme-select">
+                        <option value="dark">Тёмная</option>
+                        <option value="light">Светлая</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <button class="user-action-btn" id="edit-profile-btn">Редактировать профиль</button>
+                </div>
+                <div class="setting-item">
+                    <button class="user-action-btn" id="change-password-btn">Сменить пароль</button>
+                </div>
+                <div class="setting-item">
+                    <button class="user-action-btn" id="logout-btn">Выйти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка смены пароля -->
+    <div class="modal" id="password-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Смена пароля</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="password" id="old-password" placeholder="Старый пароль" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="password" id="new-password" placeholder="Новый пароль (мин. 6)" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="password" id="confirm-password" placeholder="Подтверждение" style="width:100%;margin-bottom:10px;padding:8px;">
+                <button class="user-action-btn" id="save-password">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка редактирования профиля -->
+    <div class="modal" id="profile-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Редактировать профиль</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="new-username" placeholder="Новое имя" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="text" id="new-nickname" placeholder="@новый ник" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="password" id="profile-old-password" placeholder="Старый пароль" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="password" id="profile-new-password" placeholder="Новый пароль (опционально)" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="file" id="profile-avatar" accept="image/*" style="margin-bottom:10px;">
+                <button class="user-action-btn" id="save-profile">Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>

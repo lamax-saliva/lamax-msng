@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация - Nexus Messenger</title>
+    <link rel="stylesheet" href="Style.css">
+</head>
+<body class="login-body">
+<div class="login-container">
+    <h1>Регистрация</h1>
+    <div class="login-card">
+        <input type="text" id="new-username" placeholder="Имя пользователя">
+        <input type="text" id="nickname" placeholder="@никнейм">
+        <input type="password" id="new-password" placeholder="Пароль">
+        <input type="password" id="confirm-password" placeholder="Подтверждение пароля">
+        <button id="register-btn">Зарегистрироваться</button>
+        <p>Уже есть аккаунт? <a href="login.html">Войти</a></p>
+    </div>
+</div>
+
+<script>
+    document.getElementById("register-btn").addEventListener("click", async () => {
+      const username = document.getElementById("new-username").value.trim();
+      const nickname = document.getElementById("nickname").value.trim();
+      const password = document.getElementById("new-password").value.trim();
+      const confirm = document.getElementById("confirm-password").value.trim();
+
+      if (!username || !nickname || !password || !confirm) {
+        return alert("Заполните все поля!");
+      }
+      if (!nickname.startsWith("@")) {
+        return alert("Ник должен начинаться с @");
+      }
+      if (password.length < 6) {
+        return alert("Пароль должен быть не меньше 6 символов");
+      }
+      if (password !== confirm) {
+        return alert("Пароли не совпадают");
+      }
+
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, nickname, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          alert("Регистрация успешна! Теперь войдите.");
+          window.location.href = "login.html";
+        } else {
+          alert(data.error);
+        }
+      } catch (err) {
+        alert("Ошибка подключения к серверу");
+        console.error(err);
+      }
+    });
+</script>
+</body>
+</html>
