@@ -2,8 +2,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const API_URL = "http://193.233.86.5:3000/api";
   const SOCKET_URL = "http://193.233.86.5:3000";
 
+  console.log("✅ main.js загружен");
+
   const socket = io(SOCKET_URL);
 
+  socket.on("connect", () => {
+    console.log("🔌 Socket.IO подключен:", socket.id);
+  });
+  socket.on("connect_error", (err) => {
+    console.error("❌ Ошибка подключения:", err);
+  });
+
+  /* ==== DOM ==== */
   const messagesContainer = document.getElementById("messages-container");
   const messageInput = document.getElementById("message-input");
   const sendButton = document.getElementById("send-button");
@@ -18,44 +28,62 @@ document.addEventListener("DOMContentLoaded", () => {
   const themeSelect = document.getElementById("theme-select");
   const userList = document.getElementById("user-list");
   const searchUser = document.getElementById("search-user");
+  const chatList = document.getElementById("chat-list");
   const chatNameEl = document.getElementById("current-chat-name");
   const chatDescEl = document.getElementById("current-chat-desc");
   const chatAvatarEl = document.getElementById("chat-avatar");
+  const meAvatar = document.getElementById("me-avatar");
 
-  let mediaRecorder;
-  let audioChunks = [];
-  let currentChat = "Общий чат";
+  // звонки
+  const callBtn = document.getElementById("call-button");
+  const inCallUI = document.getElementById("in-call-ui");
+  const callStatus = document.getElementById("call-status");
+  const muteBtn = document.getElementById("mute-btn");
+  const hangupBtn = document.getElementById("hangup-btn");
+  const incomingModal = document.getElementById("incoming-call-modal");
+  const incomingFromEl = document.getElementById("incoming-call-from");
+  const acceptCallBtn = document.getElementById("accept-call-btn");
+  const rejectCallBtn = document.getElementById("reject-call-btn");
+  const remoteAudio = document.getElementById("remote-audio");
 
-  // Загружаем текущего пользователя
+  /* ==== state ==== */
   let currentUser = localStorage.getItem("username");
   let currentNick = localStorage.getItem("nickname");
+  let currentAvatar = localStorage.getItem("avatar");
+  let currentRoomId = "room:public";
+  let currentPeerUsername = null;
+
   if (!currentUser) {
     alert("Сначала войдите!");
-    window.location.href = "login.html";
+    location.href = "login.html";
+    return;
   }
+
   document.getElementById("user-name").textContent = `${currentUser} (${currentNick})`;
-
-  // Время
-  function getCurrentTime() {
-    const now = new Date();
-    return now.getHours().toString().padStart(2, "0") + ":" +
-           now.getMinutes().toString().padStart(2, "0");
+  if (currentAvatar) {
+    meAvatar.style.backgroundImage = `url(${SOCKET_URL}${currentAvatar})`;
+    meAvatar.style.backgroundSize = "cover";
+    meAvatar.textContent = "";
   }
 
-  // Сообщения
+  socket.emit("presence:online", { username: currentUser, nickname: currentNick });
+
+  /* ==== helpers ==== */
+  const pvRoomId = (a, b) => "pv:" + [a, b].sort().join("|");
+  function getCurrentTime() {
+    const d = new Date();
+    return d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
+  }
+  function renderAttachmentHTML(att) {
+    if (!att) return "";
+    const url = att.dataUrl || att.url;
+    if (att.type === "audio") return `<audio controls src="${url}"></audio>`;
+    if (att.type && att.type.startsWith("image/")) return `<div class="media-attachment"><img src="${url}"></div>`;
+    return `<a href="${url}" download>${att.name || "Файл"}</a>`;
+  }
   function addMessage(user, text, type, attachment=null) {
     const msg = document.createElement("div");
-    msg.className = `message ${type} new`;
-    let attachHtml = "";
-    if (attachment) {
-      if (attachment.type === "audio") {
-        attachHtml = `<audio controls src="${attachment.url}"></audio>`;
-      } else if (attachment.type.startsWith("image/")) {
-        attachHtml = `<div class="media-attachment"><img src="${attachment.url}"></div>`;
-      } else {
-        attachHtml = `<div class="media-attachment"><a href="${attachment.url}" download>${attachment.name}</a></div>`;
-      }
-    }
+    msg.className = `message ${type}`;
     msg.innerHTML = `
       <div class="message-avatar">${user.charAt(0)}</div>
       <div class="message-content">
@@ -64,86 +92,104 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="message-time">${getCurrentTime()}</span>
         </div>
         ${text ? `<div class="message-text">${text}</div>` : ""}
-        ${attachHtml}
-        <div class="message-status">
-          <button onclick="addToFavorites('${text}')">⭐</button>
-        </div>
+        ${renderAttachmentHTML(attachment)}
+        <div class="message-status"><button class="fav-btn">⭐</button></div>
       </div>
     `;
+    msg.querySelector(".fav-btn").addEventListener("click", () => {
+      favoritesList.innerHTML += `
+        <div class="favorite-item">
+          <div><b>${user}</b> [${getCurrentTime()}]</div>
+          <div>${text || "(вложение)"}</div>
+        </div>`;
+    });
     messagesContainer.appendChild(msg);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
+  function addNotification(text){
+    notificationsList.innerHTML = `<div class="notification-item">${text}</div>` + notificationsList.innerHTML;
+  }
+  function markUnread(roomId) {
+    const chat = document.querySelector(`.chat-item[data-room="${roomId}"]`);
+    if (!chat) return;
+    let badge = chat.querySelector(".unread-count");
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "unread-count";
+      badge.textContent = "1";
+      chat.appendChild(badge);
+    } else {
+      badge.textContent = parseInt(badge.textContent) + 1;
+    }
+  }
 
-  // === WebSocket ===
-  socket.emit("joinChat", currentChat);
-
-  socket.on("chatHistory", (history) => {
+  /* ==== Чаты ==== */
+  socket.emit("joinChat", currentRoomId);
+  socket.on("chatHistory", ({ roomId, history }) => {
+    if (roomId !== currentRoomId) return;
     messagesContainer.innerHTML = "";
-    history.forEach(msg => {
-      addMessage(msg.user, msg.text, msg.user === currentNick ? "outgoing" : "incoming");
-    });
+    history.forEach(m => addMessage(m.user, m.text, m.user === currentNick ? "outgoing" : "incoming", m.attachment));
   });
-
-  socket.on("message", (msg) => {
-    if (msg.chatName === currentChat) {
-      addMessage(msg.user, msg.text, msg.user === currentNick ? "outgoing" : "incoming");
+  socket.on("message", (m) => {
+    if (m.roomId === currentRoomId) {
+      addMessage(m.user, m.text, m.user === currentNick ? "outgoing" : "incoming", m.attachment);
+    } else {
+      markUnread(m.roomId);
+      addNotification(`Новое сообщение в ${m.roomId}`);
     }
   });
 
-  // Отправка текста
+  chatList.addEventListener("click", (e) => {
+    const item = e.target.closest(".chat-item");
+    if (!item) return;
+    document.querySelectorAll(".chat-item").forEach(c => c.classList.remove("active"));
+    item.classList.add("active");
+    currentRoomId = item.dataset.room;
+    chatNameEl.textContent = item.textContent;
+    messagesContainer.innerHTML = "";
+    socket.emit("joinChat", currentRoomId);
+    const badge = item.querySelector(".unread-count");
+    if (badge) badge.remove();
+  });
+
+  /* ==== Отправка ==== */
   function sendMessage() {
     const text = messageInput.value.trim();
     if (!text) return;
-    socket.emit("message", { chatName: currentChat, user: currentNick, text });
+    socket.emit("message", { roomId: currentRoomId, user: currentNick, text });
     messageInput.value = "";
   }
   sendButton.addEventListener("click", sendMessage);
   messageInput.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
 
-  // Избранное
-  window.addToFavorites = function(text) {
-    if (!text) return;
-    favoritesList.innerHTML += `<div class="favorite-item">${text}</div>`;
-  };
-
-  // Уведомления
-  function addNotification(text) {
-    notificationsList.innerHTML = `<div class="notification-item">${text}</div>` + notificationsList.innerHTML;
-  }
-
-  // Смайлы
-  const emojis = ["😀","😂","😍","😎","😢","😡","👍","🙏","🔥","🎉"];
-  emojis.forEach(e => {
+  /* ==== Эмодзи ==== */
+  ["😀","😂","😍","😎","😢","😡","👍","🙏","🔥","🎉"].forEach(e => {
     const span = document.createElement("span");
     span.textContent = e;
-    span.addEventListener("click", () => {
-      messageInput.value += e;
-      emojiPanel.style.display = "none";
-    });
+    span.style.cursor = "pointer";
+    span.addEventListener("click", () => { messageInput.value += e; emojiPanel.style.display = "none"; });
     emojiPanel.appendChild(span);
   });
   emojiButton.addEventListener("click", () => {
     emojiPanel.style.display = emojiPanel.style.display === "flex" ? "none" : "flex";
   });
 
-  // Прикрепление файлов
+  /* ==== Файлы ==== */
   attachButton.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", () => {
-    for (const file of fileInput.files) {
+    [...fileInput.files].forEach(file => {
       const reader = new FileReader();
       reader.onload = e => {
-        addMessage(currentNick, "Файл:", "outgoing", {
-          url: e.target.result,
-          type: file.type,
-          name: file.name
-        });
+        const att = { dataUrl: e.target.result, type: file.type, name: file.name };
+        socket.emit("message", { roomId: currentRoomId, user: currentNick, text: "Файл:", attachment: att });
       };
       reader.readAsDataURL(file);
-    }
+    });
     fileInput.value = "";
   });
 
-  // Голосовые сообщения
+  /* ==== Голосовые ==== */
+  let mediaRecorder; let audioChunks = [];
   micButton.addEventListener("click", async () => {
     if (!mediaRecorder || mediaRecorder.state === "inactive") {
       try {
@@ -151,112 +197,52 @@ document.addEventListener("DOMContentLoaded", () => {
         mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
         mediaRecorder.start();
-        micButton.style.background = "red";
         recordingIndicator.style.display = "block";
-        mediaRecorder.addEventListener("dataavailable", e => {
-          audioChunks.push(e.data);
-        });
+        mediaRecorder.addEventListener("dataavailable", e => audioChunks.push(e.data));
         mediaRecorder.addEventListener("stop", () => {
           const blob = new Blob(audioChunks, { type: "audio/webm" });
-          const url = URL.createObjectURL(blob);
-          addMessage(currentNick, "", "outgoing", { url, type: "audio" });
-          micButton.style.background = "var(--primary)";
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const att = { dataUrl: ev.target.result, type: "audio" };
+            socket.emit("message", { roomId: currentRoomId, user: currentNick, text: "", attachment: att });
+          };
+          reader.readAsDataURL(blob);
           recordingIndicator.style.display = "none";
         });
-      } catch (err) {
-        alert("Ошибка доступа к микрофону");
-        console.error(err);
-      }
+      } catch { alert("Нет доступа к микрофону"); }
     } else {
       mediaRecorder.stop();
     }
   });
 
-  // Темы
-  function changeTheme(theme) {
-    document.body.classList.remove("dark","light");
-    document.body.classList.add(theme);
-    localStorage.setItem("theme", theme);
-  }
+  /* ==== Темы ==== */
+  function changeTheme(theme){ document.body.classList.remove("dark","light"); document.body.classList.add(theme); localStorage.setItem("theme", theme); }
   themeSelect.value = localStorage.getItem("theme") || "dark";
   changeTheme(themeSelect.value);
   themeSelect.addEventListener("change", () => changeTheme(themeSelect.value));
 
-  // Переключение вкладок
-  document.querySelectorAll(".hex-button").forEach(btn => {
-    btn.addEventListener("click", function() {
-      const tab = this.getAttribute("data-tab");
-      if (tab === "settings") {
-        document.getElementById("settings-modal").style.display = "block";
-      } else {
-        document.querySelectorAll(".hex-button").forEach(b => b.classList.remove("active"));
-        this.classList.add("active");
-        document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
-        document.getElementById(`${tab}-tab`).style.display = "block";
-      }
-    });
-  });
-
-  // Закрытие модалок
-  document.querySelectorAll(".close").forEach(c => {
-    c.addEventListener("click", () => {
-      c.closest(".modal").style.display = "none";
-    });
-  });
-
-  // Выход
+  /* ==== Выход ==== */
   document.getElementById("logout-btn").addEventListener("click", () => {
-    localStorage.removeItem("username");
-    localStorage.removeItem("nickname");
-    window.location.href = "login.html";
+    localStorage.clear();
+    location.href = "login.html";
   });
 
-  // Создание чата вручную
+  /* ==== Новый чат ==== */
   document.getElementById("create-chat-btn").addEventListener("click", () => {
-    const name = prompt("Введите название чата:");
-    if (name) {
-      document.querySelector(".chat-list").innerHTML += `<div class="chat-item" data-chat="${name}">💬 ${name}</div>`;
-      addNotification(`Создан чат: ${name}`);
+    const name = prompt("Введите название нового чата:");
+    if (!name) return;
+    const roomId = "room:" + name.toLowerCase().replace(/\s+/g, "_");
+    if (!document.querySelector(`.chat-item[data-room="${roomId}"]`)) {
+      const div = document.createElement("div");
+      div.className = "chat-item";
+      div.dataset.room = roomId;
+      div.textContent = `💬 ${name}`;
+      chatList.appendChild(div);
     }
+    addNotification(`Создан новый чат: ${name}`);
   });
 
-  // Смена пароля
-  document.getElementById("change-password-btn").addEventListener("click", () => {
-    document.getElementById("password-modal").style.display = "block";
-  });
-  document.getElementById("save-password").addEventListener("click", async () => {
-    const oldPass = document.getElementById("old-password").value.trim();
-    const newPass = document.getElementById("new-password").value.trim();
-    const confirmPass = document.getElementById("confirm-password").value.trim();
-
-    if (newPass.length < 6) {
-      alert("Пароль должен быть не меньше 6 символов");
-      return;
-    }
-    if (newPass !== confirmPass) {
-      alert("Пароли не совпадают");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_URL}/profile`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: currentUser, oldPassword: oldPass, newPassword: newPass })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("Пароль успешно изменён");
-        document.getElementById("password-modal").style.display = "none";
-      } else {
-        alert(data.error);
-      }
-    } catch (err) {
-      alert("Ошибка сервера");
-    }
-  });
-
-  // Поиск пользователей
+  /* ==== Пользователи ==== */
   async function renderUsers(filter="") {
     try {
       const res = await fetch(`${API_URL}/users`);
@@ -273,38 +259,117 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="user-name">${u.username}</div>
               <div class="user-title">${u.nickname}</div>
             </div>
-            <button class="user-action-btn">Написать</button>
-          `;
-          div.querySelector("button").addEventListener("click", () => {
-            createPrivateChat(u.username, u.nickname);
-          });
+            <button class="user-action-btn">Написать</button>`;
+          div.querySelector("button").addEventListener("click", () => openPrivateChat(u.username, u.nickname));
           userList.appendChild(div);
         });
-    } catch (err) {
-      console.error("Ошибка загрузки пользователей:", err);
-    }
+    } catch (e) { console.error(e); }
   }
   renderUsers();
-  searchUser.addEventListener("input", () => {
-    renderUsers(searchUser.value);
+  searchUser.addEventListener("input", () => renderUsers(searchUser.value));
+
+  function openPrivateChat(username, nickname) {
+    currentPeerUsername = username;
+    currentRoomId = pvRoomId(currentUser, username);
+    if (!document.querySelector(`.chat-item[data-room="${currentRoomId}"]`)) {
+      const div = document.createElement("div");
+      div.className = "chat-item";
+      div.dataset.room = currentRoomId;
+      div.textContent = `💬 Чат с ${username}`;
+      chatList.appendChild(div);
+    }
+    document.querySelectorAll(".chat-item").forEach(c => c.classList.remove("active"));
+    document.querySelector(`.chat-item[data-room="${currentRoomId}"]`).classList.add("active");
+    chatNameEl.textContent = `Чат с ${username}`;
+    chatDescEl.textContent = nickname;
+    messagesContainer.innerHTML = "";
+    socket.emit("joinChat", currentRoomId);
+  }
+
+  /* ==== Звонки ==== */
+  const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+  let pc = null, localStream = null;
+  async function startPeer(isOffer) {
+    pc = new RTCPeerConnection(rtcConfig);
+    pc.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
+    pc.onicecandidate = e => { if (e.candidate && currentPeerUsername) socket.emit("webrtc:ice", { toUsername: currentPeerUsername, candidate: e.candidate }); };
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    if (isOffer) {
+      const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
+      socket.emit("webrtc:offer", { toUsername: currentPeerUsername, sdp: offer });
+    }
+  }
+
+  callBtn.addEventListener("click", () => {
+    if (!currentPeerUsername) return alert("Выберите пользователя для звонка");
+    inCallUI.style.display = "block";
+    callStatus.textContent = `Звоним ${currentPeerUsername}…`;
+    socket.emit("call:invite", { toUsername: currentPeerUsername, fromUsername: currentUser, fromNickname: currentNick });
   });
 
-  // Приватные чаты
-  function createPrivateChat(username, nickname) {
-    currentChat = `Чат с ${username}`;
-    const chatList = document.querySelector(".chat-list");
+  socket.on("call:incoming", ({ fromUsername }) => {
+    incomingModal.style.display = "block";
+    incomingFromEl.textContent = `Звонит ${fromUsername}`;
+    currentPeerUsername = fromUsername;
+  });
 
-    if (![...chatList.children].some(c => c.dataset.chat === currentChat)) {
-      chatList.innerHTML += `<div class="chat-item" data-chat="${currentChat}">💬 ${currentChat}</div>`;
-      addNotification(`Создан чат с ${username}`);
-    }
+  acceptCallBtn.addEventListener("click", async () => {
+    incomingModal.style.display = "none";
+    inCallUI.style.display = "block";
+    socket.emit("call:accept", { toUsername: currentPeerUsername });
+    await startPeer(false);
+  });
+  rejectCallBtn.addEventListener("click", () => {
+    incomingModal.style.display = "none";
+    socket.emit("call:reject", { toUsername: currentPeerUsername });
+    currentPeerUsername = null;
+  });
 
-    chatNameEl.textContent = currentChat;
-    chatDescEl.textContent = nickname;
-    chatAvatarEl.textContent = nickname.charAt(1) || "@";
-    chatAvatarEl.style.background = "var(--primary)";
+  socket.on("call:accepted", async () => { await startPeer(true); });
+  socket.on("webrtc:offer", async ({ sdp }) => { if (!pc) await startPeer(false); await pc.setRemoteDescription(new RTCSessionDescription(sdp)); const answer = await pc.createAnswer(); await pc.setLocalDescription(answer); socket.emit("webrtc:answer", { toUsername: currentPeerUsername, sdp: answer }); });
+  socket.on("webrtc:answer", async ({ sdp }) => { if (pc) await pc.setRemoteDescription(new RTCSessionDescription(sdp)); });
+  socket.on("webrtc:ice", async ({ candidate }) => { if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate)); });
 
-    socket.emit("joinChat", currentChat);
-    messagesContainer.innerHTML = "";
-  }
+  hangupBtn.addEventListener("click", () => {
+    socket.emit("call:hungup", { toUsername: currentPeerUsername });
+    if (pc) pc.close();
+    inCallUI.style.display = "none";
+    currentPeerUsername = null;
+  });
+  socket.on("call:hungup", () => {
+    if (pc) pc.close();
+    inCallUI.style.display = "none";
+    currentPeerUsername = null;
+  });
+  /* ==== Переключение вкладок боковой панели ==== */
+  document.querySelectorAll(".hex-button").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const tab = this.getAttribute("data-tab");
+
+      // убрать актив со всех кнопок
+      document.querySelectorAll(".hex-button").forEach(b => b.classList.remove("active"));
+      this.classList.add("active");
+
+      // скрыть все вкладки
+      document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
+
+      // открыть нужную
+      const activeTab = document.getElementById(`${tab}-tab`);
+      if (activeTab) activeTab.style.display = "block";
+
+      // если settings → показываем модалку
+      if (tab === "settings") {
+        document.getElementById("settings-modal").style.display = "block";
+      }
+    });
+  });
+
+  /* ==== Закрытие модалок ==== */
+  document.querySelectorAll(".modal .close").forEach(c => {
+    c.addEventListener("click", () => {
+      c.closest(".modal").style.display = "none";
+    });
+  });
+
 });

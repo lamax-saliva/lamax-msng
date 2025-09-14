@@ -19,6 +19,8 @@
 </div>
 
 <script>
+    const API_URL = "http://193.233.86.5:3000/api"; // 🔹 сервер
+
     document.getElementById("register-btn").addEventListener("click", async () => {
       const username = document.getElementById("new-username").value.trim();
       const nickname = document.getElementById("nickname").value.trim();
@@ -39,7 +41,7 @@
       }
 
       try {
-        const res = await fetch("/api/register", {
+        const res = await fetch(`${API_URL}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, nickname, password })
