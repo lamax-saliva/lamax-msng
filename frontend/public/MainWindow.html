@@ -29,13 +29,17 @@
                 <p id="current-chat-desc">Добро пожаловать в Nexus Messenger</p>
             </div>
         </div>
-        <button class="input-btn" id="call-button" title="Аудио-звонок" style="margin-left:auto;">
+        <button class="input-btn" id="call-button" title="Звонок" style="margin-left:auto;">
             <i class="fas fa-phone"></i>
+        </button>
+        <button class="input-btn" id="video-call-button" title="Видеозвонок" style="margin-left:10px;">
+            <i class="fas fa-video"></i>
         </button>
     </div>
 
     <!-- Сообщения -->
     <div class="messages-container" id="messages-container"></div>
+    <div id="typing-indicator" style="padding:5px 15px;color:var(--accent);display:none;">Печатает...</div>
 
     <!-- Панель ввода -->
     <div class="wave-input">
@@ -56,7 +60,6 @@
     <!-- Боковая панель -->
     <div class="diamond-sidebar">
         <div class="sidebar-content">
-            <!-- Чат -->
             <div class="tab-content" id="chat-tab">
                 <div class="user-card">
                     <div class="user-avatar" id="me-avatar">Я</div>
@@ -69,26 +72,22 @@
                 </div>
             </div>
 
-            <!-- Пользователи -->
             <div class="tab-content" id="users-tab" style="display:none;">
                 <h3>Все пользователи</h3>
                 <input type="text" id="search-user" placeholder="Поиск по @тегу" style="width:100%;padding:8px;margin-bottom:10px;border-radius:8px;">
                 <div class="user-list" id="user-list"></div>
             </div>
 
-            <!-- Уведомления -->
             <div class="tab-content" id="notifications-tab" style="display:none;">
                 <h3>Уведомления</h3>
                 <div class="notifications-list" id="notifications-list"><p>Нет уведомлений</p></div>
             </div>
 
-            <!-- Избранное -->
             <div class="tab-content" id="favorites-tab" style="display:none;">
                 <h3>Избранное</h3>
                 <div class="favorites-list" id="favorites-list"><p>Пока пусто</p></div>
             </div>
 
-            <!-- Новый чат -->
             <div class="tab-content" id="new-chat-tab" style="display:none;">
                 <h3>Новый чат</h3>
                 <button class="user-action-btn" id="create-chat-btn">Создать чат</button>
@@ -115,25 +114,41 @@
                     <button class="user-action-btn" id="edit-profile-btn">Редактировать профиль</button>
                 </div>
                 <div class="setting-item">
-                    <button class="user-action-btn" id="change-password-btn">Сменить пароль</button>
-                </div>
-                <div class="setting-item">
                     <button class="user-action-btn" id="logout-btn">Выйти</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Входящий звонок -->
-    <div class="modal incoming-call" id="incoming-call-modal">
+    <!-- Модалка редактирования профиля -->
+    <div class="modal" id="profile-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Входящий звонок</h2>
+                <h2>Редактировать профиль</h2>
+                <span class="close">&times;</span>
             </div>
             <div class="modal-body">
-                <p id="incoming-call-from" style="margin-bottom:15px;">Звонит …</p>
-                <button class="user-action-btn" id="accept-call-btn">Принять</button>
-                <button class="user-action-btn" id="reject-call-btn" style="background:#e74c3c;margin-left:10px;">Отклонить</button>
+                <input type="text" id="new-username" placeholder="Новое имя" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="text" id="new-nickname" placeholder="@новый ник" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="password" id="profile-old-password" placeholder="Старый пароль" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="password" id="profile-new-password" placeholder="Новый пароль (мин. 6)" style="width:100%;margin-bottom:10px;padding:8px;">
+                <input type="file" id="profile-avatar" accept="image/*" style="margin-bottom:10px;">
+                <button class="user-action-btn" id="save-profile">Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно звонка -->
+    <div class="modal" id="call-window">
+        <div class="modal-content" style="text-align:center;padding:30px;">
+            <video id="remote-video" autoplay playsinline style="width:300px;height:200px;border-radius:10px;background:#000;"></video>
+            <video id="local-video" autoplay playsinline muted style="width:120px;height:90px;position:absolute;bottom:20px;right:20px;border:2px solid white;border-radius:8px;"></video>
+            <h2 id="call-user-name" style="margin-top:20px;">Звонок</h2>
+            <p id="call-status-text">Ожидание ответа…</p>
+            <div style="margin-top:30px;display:flex;justify-content:center;gap:20px;">
+                <button class="user-action-btn" id="toggle-video-btn"><i class="fas fa-video"></i></button>
+                <button class="user-action-btn" id="cancel-call-btn" style="background:#e74c3c;"><i class="fas fa-times"></i></button>
+                <button class="user-action-btn" id="accept-call-window-btn"><i class="fas fa-phone"></i></button>
             </div>
         </div>
     </div>
@@ -143,18 +158,11 @@
         <span id="call-status">Звонок…</span>
         <button class="user-action-btn" id="mute-btn">Mute</button>
         <button class="user-action-btn" id="hangup-btn" style="background:#e74c3c;">Завершить</button>
-        <audio id="local-audio" autoplay playsinline muted></audio>
-        <audio id="remote-audio" autoplay playsinline></audio>
     </div>
 
-    <!-- 🔔 Уведомление о звонке -->
-    <div id="call-notification" class="call-notification">
-        <i class="fas fa-phone-volume"></i> <span id="call-notification-text">Входящий звонок…</span>
-    </div>
 
     <!-- 🔔 Рингтон -->
     <audio id="ringtone" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" loop></audio>
-
 </div>
 <script src="main.js"></script>
 </body>
