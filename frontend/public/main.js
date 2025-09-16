@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const messagesContainer = document.getElementById("messages-container");
   const typingIndicator = document.getElementById("typing-indicator");
   const messageInput = document.getElementById("message-input");
+  const minimizeCallBtn = document.getElementById("minimize-call-btn");
+  const expandCallBtn = document.getElementById("expand-call-btn");
   const sendButton = document.getElementById("send-button");
   const emojiButton = document.getElementById("emoji-button");
   const attachButton = document.getElementById("attach-button");
@@ -173,9 +175,61 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  /* ==== Список пользователей ==== */
+  let onlineUsers = [];
 
-//2 ЧАААААААААААААААААААААААААААААААААААААААААААААААСТЬ
+  socket.on("presence:list", (list) => {
+    onlineUsers = list;
+    renderUsers(searchUser.value);
+  });
 
+  async function renderUsers(filter="") {
+    try {
+      const res = await fetch(`${API_URL}/users`);
+      const users = await res.json();
+      userList.innerHTML = "";
+      users
+        .filter(u => u.nickname.toLowerCase().includes(filter.toLowerCase()))
+        .forEach(u => {
+          const isOnline = onlineUsers.includes(u.username);
+          const div = document.createElement("div");
+          div.className = "user-list-item";
+          div.innerHTML = `
+            <div class="user-avatar-small">${u.username.charAt(0)}</div>
+            <div class="user-info">
+              <div class="user-name">${u.username}</div>
+              <div class="user-title">${u.nickname}</div>
+              <div class="user-status" style="color:${isOnline ? 'limegreen' : 'gray'};">
+                ${isOnline ? "В сети" : "Не в сети"}
+              </div>
+            </div>
+            <button class="user-action-btn">Написать</button>`;
+          div.querySelector("button").addEventListener("click", () => openPrivateChat(u.username, u.nickname));
+          userList.appendChild(div);
+        });
+    } catch (e) { console.error(e); }
+  }
+
+  renderUsers();
+  searchUser.addEventListener("input", () => renderUsers(searchUser.value));
+
+  function openPrivateChat(username, nickname) {
+    currentPeerUsername = username;
+    currentRoomId = pvRoomId(currentUser, username);
+    if (!document.querySelector(`.chat-item[data-room="${currentRoomId}"]`)) {
+      const div = document.createElement("div");
+      div.className = "chat-item";
+      div.dataset.room = currentRoomId;
+      div.textContent = `💬 Чат с ${username}`;
+      chatList.appendChild(div);
+    }
+    document.querySelectorAll(".chat-item").forEach(c => c.classList.remove("active"));
+    document.querySelector(`.chat-item[data-room="${currentRoomId}"]`).classList.add("active");
+    chatNameEl.textContent = `Чат с ${username}`;
+    chatDescEl.textContent = nickname;
+    messagesContainer.innerHTML = "";
+    socket.emit("joinChat", currentRoomId);
+  }
 
   /* ==== WebRTC ==== */
   const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
@@ -232,42 +286,40 @@ document.addEventListener("DOMContentLoaded", () => {
     socket.emit("call:invite", { toUsername: currentPeerUsername, fromUsername: currentUser, fromNickname: currentNick, video: true });
   });
 
-    socket.on("call:incoming", ({ fromUsername, video }) => {
-      currentPeerUsername = fromUsername;
-      callWindow.style.display = "block";
-      callWindow.querySelector(".modal-content").classList.add("pulsing"); // 🔥 добавили анимацию
-      callUserName.textContent = fromUsername;
-      callStatusText.textContent = video ? "Входящий видеозвонок" : "Входящий звонок";
+  socket.on("call:incoming", ({ fromUsername, video }) => {
+    currentPeerUsername = fromUsername;
+    callWindow.style.display = "block";
+    callWindow.querySelector(".modal-content").classList.add("pulsing");
+    callUserName.textContent = fromUsername;
+    callStatusText.textContent = video ? "Входящий видеозвонок" : "Входящий звонок";
 
-      callNotificationText.textContent = `Звонок от ${fromUsername}`;
-      callNotification.classList.add("show");
-      ringtone.play().catch(()=>{});
-    });
+    callNotificationText.textContent = `Звонок от ${fromUsername}`;
+    callNotification.classList.add("show");
+    ringtone.play().catch(()=>{});
+  });
+
+  acceptCallWindowBtn.addEventListener("click", async () => {
+    acceptCallWindowBtn.classList.add("accepted"); // ✅ подсветка и анимация
+    callWindow.querySelector(".modal-content").classList.remove("pulsing");
+    callNotification.classList.remove("show");
+    ringtone.pause(); ringtone.currentTime = 0;
+    inCallUI.style.display = "block";
+    socket.emit("call:accept", { toUsername: currentPeerUsername });
+    await startPeer(false, true);
+  });
 
 
-    acceptCallWindowBtn.addEventListener("click", async () => {
-      callWindow.style.display = "none";
-      callWindow.querySelector(".modal-content").classList.remove("pulsing"); // 🔥 убираем анимацию
-      callNotification.classList.remove("show");
-      ringtone.pause(); ringtone.currentTime = 0;
-      inCallUI.style.display = "block";
-      socket.emit("call:accept", { toUsername: currentPeerUsername });
-      await startPeer(false, true);
-    });
-
-
-    cancelCallBtn.addEventListener("click", () => {
-      callWindow.style.display = "none";
-      callWindow.querySelector(".modal-content").classList.remove("pulsing"); // 🔥 убираем анимацию
-      socket.emit("call:reject", { toUsername: currentPeerUsername });
-      callNotification.classList.remove("show");
-      ringtone.pause(); ringtone.currentTime = 0;
-      currentPeerUsername = null;
-    });
-
+  cancelCallBtn.addEventListener("click", () => {
+    callWindow.style.display = "none";
+    callWindow.querySelector(".modal-content").classList.remove("pulsing");
+    socket.emit("call:reject", { toUsername: currentPeerUsername });
+    callNotification.classList.remove("show");
+    ringtone.pause(); ringtone.currentTime = 0;
+    currentPeerUsername = null;
+  });
 
   socket.on("call:accepted", async () => {
-    callWindow.style.display = "none";
+    callStatus.textContent = "Соединение установлено";
     inCallUI.style.display = "block";
     await startPeer(true, true);
   });
@@ -286,20 +338,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate));
   });
 
-    hangupBtn.addEventListener("click", () => {
-      socket.emit("call:hangup", { toUsername: currentPeerUsername });
-      if (pc) pc.close();
-      inCallUI.style.display = "none";
-      callWindow.style.display = "none";
-      callWindow.querySelector(".modal-content").classList.remove("pulsing"); // 🔥 убираем анимацию
-      currentPeerUsername = null;
-    });
+  hangupBtn.addEventListener("click", () => {
+    socket.emit("call:hangup", { toUsername: currentPeerUsername });
+    if (pc) pc.close();
+    inCallUI.style.display = "none";
+    callWindow.style.display = "none";
+    callWindow.querySelector(".modal-content").classList.remove("pulsing");
+    currentPeerUsername = null;
+  });
 
   socket.on("call:hangup", () => {
     if (pc) pc.close();
     inCallUI.style.display = "none";
     callWindow.style.display = "none";
-    callWindow.querySelector(".modal-content").classList.remove("pulsing"); // 🔥 убираем анимацию
+    callWindow.querySelector(".modal-content").classList.remove("pulsing");
     currentPeerUsername = null;
   });
 
@@ -308,6 +360,19 @@ document.addEventListener("DOMContentLoaded", () => {
     inCallUI.style.display = "none";
     currentPeerUsername = null;
   });
+
+  // Свернуть звонок
+  minimizeCallBtn.addEventListener("click", () => {
+    callWindow.style.display = "none";
+    inCallUI.style.display = "block";
+  });
+
+  // Развернуть звонок
+  expandCallBtn.addEventListener("click", () => {
+    callWindow.style.display = "block";
+    inCallUI.style.display = "none";
+  });
+
 
   /* ==== Управление микрофоном и камерой ==== */
   muteBtn.addEventListener("click", () => {
@@ -383,12 +448,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-    /* ==== Выход из аккаунта ==== */
-    const logoutBtn = document.getElementById("logout-btn");
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
-        localStorage.clear();
-        location.href = "login.html";
-      });
-    }
+  /* ==== Выход из аккаунта ==== */
+  const logoutBtn = document.getElementById("logout-btn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      socket.emit("presence:offline", { username: currentUser });
+      localStorage.clear();
+      socket.disconnect();
+      location.href = "login.html";
+    });
+  }
 });

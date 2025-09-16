@@ -141,24 +141,27 @@
     <!-- Окно звонка -->
     <div class="modal" id="call-window">
         <div class="modal-content" style="text-align:center;padding:30px;">
-            <video id="remote-video" autoplay playsinline style="width:300px;height:200px;border-radius:10px;background:#000;"></video>
-            <video id="local-video" autoplay playsinline muted style="width:120px;height:90px;position:absolute;bottom:20px;right:20px;border:2px solid white;border-radius:8px;"></video>
+            <video id="remote-video" autoplay playsinline style="width:100%;height:250px;border-radius:10px;background:#000;object-fit:cover;"></video>
             <h2 id="call-user-name" style="margin-top:20px;">Звонок</h2>
             <p id="call-status-text">Ожидание ответа…</p>
             <div style="margin-top:30px;display:flex;justify-content:center;gap:20px;">
                 <button class="user-action-btn" id="toggle-video-btn"><i class="fas fa-video"></i></button>
                 <button class="user-action-btn" id="cancel-call-btn" style="background:#e74c3c;"><i class="fas fa-times"></i></button>
                 <button class="user-action-btn" id="accept-call-window-btn"><i class="fas fa-phone"></i></button>
+                <button class="user-action-btn" id="minimize-call-btn" style="background:#3498db;"><i class="fas fa-window-minimize"></i></button>
             </div>
         </div>
     </div>
+
 
     <!-- Панель активного звонка -->
     <div id="in-call-ui">
         <span id="call-status">Звонок…</span>
         <button class="user-action-btn" id="mute-btn">Mute</button>
+        <button class="user-action-btn" id="expand-call-btn" style="background:#3498db;"><i class="fas fa-window-maximize"></i></button>
         <button class="user-action-btn" id="hangup-btn" style="background:#e74c3c;">Завершить</button>
     </div>
+
 
 
     <!-- 🔔 Рингтон -->
