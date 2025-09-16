@@ -220,17 +220,15 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ==== Звонки ==== */
   callBtn.addEventListener("click", () => {
     if (!currentPeerUsername) return alert("Выберите пользователя для звонка");
-    callWindow.style.display = "block";
-    callUserName.textContent = currentPeerUsername;
-    callStatusText.textContent = "Звоним…";
+    inCallUI.style.display = "block";
+    callStatus.textContent = `Звоним ${currentPeerUsername}…`;
     socket.emit("call:invite", { toUsername: currentPeerUsername, fromUsername: currentUser, fromNickname: currentNick, video: false });
   });
 
   videoCallBtn.addEventListener("click", () => {
     if (!currentPeerUsername) return alert("Выберите пользователя для видеозвонка");
-    callWindow.style.display = "block";
-    callUserName.textContent = currentPeerUsername;
-    callStatusText.textContent = "Видеозвонок…";
+    inCallUI.style.display = "block";
+    callStatus.textContent = `Видеозвонок ${currentPeerUsername}…`;
     socket.emit("call:invite", { toUsername: currentPeerUsername, fromUsername: currentUser, fromNickname: currentNick, video: true });
   });
 
@@ -384,4 +382,13 @@ document.addEventListener("DOMContentLoaded", () => {
       c.closest(".modal").style.display = "none";
     });
   });
+
+    /* ==== Выход из аккаунта ==== */
+    const logoutBtn = document.getElementById("logout-btn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        localStorage.clear();
+        location.href = "login.html";
+      });
+    }
 });
