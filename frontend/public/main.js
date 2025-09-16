@@ -45,6 +45,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const acceptCallBtn = document.getElementById("accept-call-btn");
   const rejectCallBtn = document.getElementById("reject-call-btn");
   const remoteAudio = document.getElementById("remote-audio");
+  const localAudio = document.getElementById("local-audio");
+
+  // уведомление и рингтон
+  const ringtone = document.getElementById("ringtone");
+  const callNotification = document.getElementById("call-notification");
+  const callNotificationText = document.getElementById("call-notification-text");
 
   /* ==== state ==== */
   let currentUser = localStorage.getItem("username");
@@ -249,20 +255,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const users = await res.json();
       userList.innerHTML = "";
       users
-        .filter(u => u.nickname.toLowerCase().includes(filter.toLowerCase()))
-        .forEach(u => {
-          const div = document.createElement("div");
-          div.className = "user-list-item";
-          div.innerHTML = `
+          .filter(u => u.nickname.toLowerCase().includes(filter.toLowerCase()))
+          .forEach(u => {
+            const div = document.createElement("div");
+            div.className = "user-list-item";
+            div.innerHTML = `
             <div class="user-avatar-small">${u.username.charAt(0)}</div>
             <div class="user-info">
               <div class="user-name">${u.username}</div>
               <div class="user-title">${u.nickname}</div>
             </div>
             <button class="user-action-btn">Написать</button>`;
-          div.querySelector("button").addEventListener("click", () => openPrivateChat(u.username, u.nickname));
-          userList.appendChild(div);
-        });
+            div.querySelector("button").addEventListener("click", () => openPrivateChat(u.username, u.nickname));
+            userList.appendChild(div);
+          });
     } catch (e) { console.error(e); }
   }
   renderUsers();
@@ -289,12 +295,15 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ==== Звонки ==== */
   const rtcConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
   let pc = null, localStream = null;
+  let isMuted = false;
+
   async function startPeer(isOffer) {
     pc = new RTCPeerConnection(rtcConfig);
     pc.ontrack = e => { remoteAudio.srcObject = e.streams[0]; };
     pc.onicecandidate = e => { if (e.candidate && currentPeerUsername) socket.emit("webrtc:ice", { toUsername: currentPeerUsername, candidate: e.candidate }); };
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    localAudio.srcObject = localStream;
     if (isOffer) {
       const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
       socket.emit("webrtc:offer", { toUsername: currentPeerUsername, sdp: offer });
@@ -312,16 +321,27 @@ document.addEventListener("DOMContentLoaded", () => {
     incomingModal.style.display = "block";
     incomingFromEl.textContent = `Звонит ${fromUsername}`;
     currentPeerUsername = fromUsername;
+
+    // уведомление + рингтон
+    callNotificationText.textContent = `Звонок от ${fromUsername}`;
+    callNotification.classList.add("show");
+    ringtone.play().catch(()=>{});
   });
 
   acceptCallBtn.addEventListener("click", async () => {
     incomingModal.style.display = "none";
+    callNotification.classList.remove("show");
+    ringtone.pause(); ringtone.currentTime = 0;
+
     inCallUI.style.display = "block";
     socket.emit("call:accept", { toUsername: currentPeerUsername });
     await startPeer(false);
   });
   rejectCallBtn.addEventListener("click", () => {
     incomingModal.style.display = "none";
+    callNotification.classList.remove("show");
+    ringtone.pause(); ringtone.currentTime = 0;
+
     socket.emit("call:reject", { toUsername: currentPeerUsername });
     currentPeerUsername = null;
   });
@@ -331,34 +351,52 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("webrtc:answer", async ({ sdp }) => { if (pc) await pc.setRemoteDescription(new RTCSessionDescription(sdp)); });
   socket.on("webrtc:ice", async ({ candidate }) => { if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate)); });
 
+  /* ==== Завершение звонка ==== */
   hangupBtn.addEventListener("click", () => {
-    socket.emit("call:hungup", { toUsername: currentPeerUsername });
+    socket.emit("call:hangup", { toUsername: currentPeerUsername });
     if (pc) pc.close();
     inCallUI.style.display = "none";
+    callNotification.classList.remove("show");
+    ringtone.pause(); ringtone.currentTime = 0;
     currentPeerUsername = null;
   });
-  socket.on("call:hungup", () => {
+  socket.on("call:hangup", () => {
     if (pc) pc.close();
     inCallUI.style.display = "none";
+    callNotification.classList.remove("show");
+    ringtone.pause(); ringtone.currentTime = 0;
     currentPeerUsername = null;
   });
-  /* ==== Переключение вкладок боковой панели ==== */
+
+  /* ==== Отклонение ==== */
+  socket.on("call:rejected", () => {
+    inCallUI.style.display = "none";
+    callStatus.textContent = "Звонок отклонён";
+    callNotification.classList.remove("show");
+    ringtone.pause(); ringtone.currentTime = 0;
+    currentPeerUsername = null;
+  });
+
+  /* ==== Mute/Unmute ==== */
+  muteBtn.addEventListener("click", () => {
+    if (!localStream) return;
+    isMuted = !isMuted;
+    localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+    muteBtn.textContent = isMuted ? "Unmute" : "Mute";
+  });
+
+  /* ==== Переключение вкладок ==== */
   document.querySelectorAll(".hex-button").forEach(btn => {
     btn.addEventListener("click", function () {
       const tab = this.getAttribute("data-tab");
 
-      // убрать актив со всех кнопок
       document.querySelectorAll(".hex-button").forEach(b => b.classList.remove("active"));
       this.classList.add("active");
 
-      // скрыть все вкладки
       document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
-
-      // открыть нужную
       const activeTab = document.getElementById(`${tab}-tab`);
       if (activeTab) activeTab.style.display = "block";
 
-      // если settings → показываем модалку
       if (tab === "settings") {
         document.getElementById("settings-modal").style.display = "block";
       }
