@@ -121,37 +121,56 @@ body {
   flex-direction: column;
   gap: 12px;
 }
+
 .message {
   display: flex;
+  align-items: flex-end; /* чтобы звезда выравнивалась снизу */
   max-width: 75%;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.3s ease; /* отступ между сообщением и звездой */
 }
+
 .message.incoming { align-self: flex-start; }
 .message.outgoing { align-self: flex-end; flex-direction: row-reverse; }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.message-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--secondary), var(--primary));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin: 0 12px;
-  font-size: 0.9rem;
-}
+
 .message-content {
   background: var(--gray);
   padding: 10px 15px;
   border-radius: 18px;
+  display: flex;
+  flex-direction: column;
 }
-.message.outgoing .message-content {
-  background: linear-gradient(to right, var(--primary), var(--secondary));
-  color: white;
+
+.message-time {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  margin-top: 6px;
+  align-self: flex-start;
+}
+
+.fav-btn {
+  background: var(--dark);
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.fav-btn:hover {
+  color: gold;
+  transform: scale(1.05);
+  border-color: gold;
+}
+
+.fav-btn.active {
+  color: gold;
+  border-color: gold;
+  background: rgba(255,215,0,0.1);
 }
 
 /* Вложения */
@@ -525,3 +544,85 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(0,255,0,0); }
 }
 
+/* === Голосовые сообщения === */
+.message .voice-message {
+  background: transparent;
+  padding: 6px 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.voice-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  max-width: 300px;
+}
+.voice-message .play-btn {
+  background: var(--accent);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.voice-message .play-btn:hover {
+  background: var(--secondary);
+}
+.voice-message .progress-container {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.voice-message .progress-bar {
+  height: 100%;
+  width: 0%;
+  background: white;
+  transition: width 0.2s;
+}
+.voice-message .time {
+  font-size: 0.75rem;
+  min-width: 38px;
+  text-align: right;
+}
+/* === Избранные сообщения в боковой панели === */
+.favorites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.favorite-item {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.favorite-item:hover {
+  background: rgba(255,255,255,0.15);
+  transform: scale(1.02);
+}
+.favorite-item b {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* Подсветка исходного сообщения при переходе из избранного */
+.message.highlight {
+  box-shadow: 0 0 0 3px var(--accent);
+  border-radius: 20px;
+  animation: highlight-fade 2s forwards;
+}
+@keyframes highlight-fade {
+  0% { box-shadow: 0 0 0 3px var(--accent); }
+  100% { box-shadow: none; }
+}
