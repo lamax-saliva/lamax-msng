@@ -140,10 +140,16 @@
 
     <!-- Окно звонка -->
     <div class="modal" id="call-window">
-        <div class="modal-content" style="text-align:center;padding:30px;">
-            <video id="remote-video" autoplay playsinline style="width:100%;height:250px;border-radius:10px;background:#000;object-fit:cover;"></video>
+        <div class="modal-content" style="text-align:center;padding:30px;position:relative;">
+            <video id="remote-video" autoplay playsinline
+                   style="width:100%;height:250px;border-radius:10px;background:#000;object-fit:cover;"></video>
+            <video id="local-video" autoplay playsinline muted
+                   style="width:120px;height:90px;border-radius:10px;position:absolute;bottom:20px;right:20px;background:#000;border:2px solid var(--primary);"></video>
+            <audio id="remote-audio" autoplay></audio>
+
             <h2 id="call-user-name" style="margin-top:20px;">Звонок</h2>
             <p id="call-status-text">Ожидание ответа…</p>
+
             <div style="margin-top:30px;display:flex;justify-content:center;gap:20px;">
                 <button class="user-action-btn" id="toggle-video-btn"><i class="fas fa-video"></i></button>
                 <button class="user-action-btn" id="cancel-call-btn" style="background:#e74c3c;"><i class="fas fa-times"></i></button>
@@ -162,8 +168,13 @@
     </div>
 
     <!-- 🔔 Рингтон -->
-    <audio id="ringtone" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" loop></audio>
+    <audio id="ringtone" src="/SoundCall.mp3" loop></audio>
 </div>
-<script src="main.js"></script>
+
+<script src="JSScripts/chat.js"></script>
+<script src="JSScripts/users.js"></script>
+<script src="JSScripts/call.js"></script>
+<script src="JSScripts/main.js"></script>
+
 </body>
 </html>
