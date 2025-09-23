@@ -121,37 +121,56 @@ body {
   flex-direction: column;
   gap: 12px;
 }
+
 .message {
   display: flex;
+  align-items: flex-end; /* чтобы звезда выравнивалась снизу */
   max-width: 75%;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.3s ease; /* отступ между сообщением и звездой */
 }
+
 .message.incoming { align-self: flex-start; }
 .message.outgoing { align-self: flex-end; flex-direction: row-reverse; }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.message-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--secondary), var(--primary));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin: 0 12px;
-  font-size: 0.9rem;
-}
+
 .message-content {
   background: var(--gray);
   padding: 10px 15px;
   border-radius: 18px;
+  display: flex;
+  flex-direction: column;
 }
-.message.outgoing .message-content {
-  background: linear-gradient(to right, var(--primary), var(--secondary));
-  color: white;
+
+.message-time {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  margin-top: 6px;
+  align-self: flex-start;
+}
+
+.fav-btn {
+  background: var(--dark);
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.fav-btn:hover {
+  color: gold;
+  transform: scale(1.05);
+  border-color: gold;
+}
+
+.fav-btn.active {
+  color: gold;
+  border-color: gold;
+  background: rgba(255,215,0,0.1);
 }
 
 /* Вложения */
@@ -393,4 +412,294 @@ body {
 .incoming-call .modal-content {
   animation: pulse 1.5s infinite;
   border: 2px solid var(--accent);
+}
+/* ==== Окно звонка ==== */
+#call-window {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#call-window .modal-content {
+  background: var(--dark);
+  border-radius: 20px;
+  width: 400px;
+  max-width: 90%;
+  padding: 30px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  animation: fadeIn 0.3s ease;
+}
+
+#call-user-name {
+  font-size: 1.5rem;
+  margin-top: 15px;
+  font-weight: bold;
+  color: var(--light);
+}
+
+#call-status-text {
+  color: var(--accent);
+  margin-top: 5px;
+  font-style: italic;
+}
+
+/* Видео */
+#remote-video {
+  width: 100%;
+  height: 220px;
+  border-radius: 12px;
+  background: #000;
+  object-fit: cover;
+}
+#local-video {
+  width: 120px;
+  height: 90px;
+  border-radius: 10px;
+  border: 2px solid var(--primary);
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Кнопки управления в окне звонка */
+#call-window .user-action-btn {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  transition: all 0.2s ease;
+}
+#call-window .user-action-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 15px var(--accent);
+}
+
+/* Кнопка "Завершить" */
+#cancel-call-btn {
+  background: #e74c3c;
+}
+#cancel-call-btn:hover {
+  background: #c0392b;
+}
+
+/* Панель активного звонка */
+#in-call-ui {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: rgba(30,30,30,0.9);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 16px;
+  z-index: 400;
+  display: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+#in-call-ui button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+}
+
+/* Анимация "звонит" */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(255,64,129,0.7); }
+  70% { box-shadow: 0 0 0 20px rgba(255,64,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,64,129,0); }
+}
+#call-window .modal-content.pulsing {
+  animation: pulse-ring 1.5s infinite;
+}
+.user-status {
+  font-size: 0.8rem;
+  margin-top: 3px;
+}
+#call-window {
+  display: none; /* 🔥 изначально окно звонка скрыто */
+}
+/* Подсветка принятой кнопки звонка */
+#accept-call-window-btn.accepted {
+  background: limegreen !important;
+  color: white;
+  animation: pulse-green 1.5s infinite;
+}
+
+@keyframes pulse-green {
+  0%   { box-shadow: 0 0 0 0 rgba(0,255,0,0.7); }
+  70%  { box-shadow: 0 0 0 20px rgba(0,255,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,255,0,0); }
+}
+
+/* === Голосовые сообщения === */
+
+/* Улучшенные стили для голосовых сообщений */
+.voice-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(126, 87, 194, 0.1);
+  border-radius: 18px;
+  margin-top: 5px;
+}
+
+.play-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.play-btn:hover {
+  background: var(--accent);
+}
+
+.progress-container {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.1s linear;
+}
+
+.voice-message .time {
+  font-size: 12px;
+  color: var(--light);
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Индикатор записи */
+#recording-indicator {
+  display: none;
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(231, 76, 60, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  z-index: 1000;
+  font-weight: bold;
+}
+
+/* Анимация пульсации для индикатора записи */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.recording {
+  animation: pulse 1s infinite;
+}
+
+.message .voice-message {
+  background: transparent;
+  padding: 6px 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.voice-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  max-width: 300px;
+}
+.voice-message .play-btn {
+  background: var(--accent);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.voice-message .play-btn:hover {
+  background: var(--secondary);
+}
+.voice-message .progress-container {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.voice-message .progress-bar {
+  height: 100%;
+  width: 0%;
+  background: white;
+  transition: width 0.2s;
+}
+.voice-message .time {
+  font-size: 0.75rem;
+  min-width: 38px;
+  text-align: right;
+}
+/* === Избранные сообщения в боковой панели === */
+.favorites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.favorite-item {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.favorite-item:hover {
+  background: rgba(255,255,255,0.15);
+  transform: scale(1.02);
+}
+.favorite-item b {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* Подсветка исходного сообщения при переходе из избранного */
+.message.highlight {
+  box-shadow: 0 0 0 3px var(--accent);
+  border-radius: 20px;
+  animation: highlight-fade 2s forwards;
+}
+@keyframes highlight-fade {
+  0% { box-shadow: 0 0 0 3px var(--accent); }
+  100% { box-shadow: none; }
 }
