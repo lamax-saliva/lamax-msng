@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const SOCKET_URL = "http://193.233.86.5:3000";
   const socket = io(SOCKET_URL);
 
-  console.log("✅ main.js загружен");
+  console.log("✅ app.js загружен");
 
   let currentUser = localStorage.getItem("username");
   let currentNick = localStorage.getItem("nickname");
