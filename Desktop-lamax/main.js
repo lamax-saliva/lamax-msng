@@ -68,3 +68,8 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
 });
+
+ipcMain.on("redirect-to-login", () => {
+    if (loginWindow) return;
+    createLoginWindow();
+});
