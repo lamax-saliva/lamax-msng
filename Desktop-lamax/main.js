@@ -2,66 +2,26 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 
 let mainWindow;
-let loginWindow;
 
-function createLoginWindow() {
-    loginWindow = new BrowserWindow({
-        width: 500,
-        height: 650,
-        icon: path.join(__dirname, "icon.png"),
-        webPreferences: {
-            preload: path.join(__dirname, "preload.js"),
-            contextIsolation: true,
-            nodeIntegration: false,
-            sandbox: false
-        }
-    });
-
-    loginWindow.setMenu(null);
-    loginWindow.loadFile("Login.html");
-}
-
-function createMainWindow() {
+function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
-        icon: path.join(__dirname, "icon.png"),
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
-            contextIsolation: true,
             nodeIntegration: false,
-            sandbox: false
+            contextIsolation: true,
         }
     });
 
-    mainWindow.setMenu(null);
-    mainWindow.loadFile("MainWindow.html");
+    mainWindow.loadFile("login.html");
 }
 
-// события от фронта
-ipcMain.on("login-success", () => {
-    if (loginWindow) {
-        loginWindow.close();
-        loginWindow = null;
-    }
-    createMainWindow();
-});
-
-ipcMain.on("logout", () => {
-    if (mainWindow) {
-        mainWindow.close();
-        mainWindow = null;
-    }
-    createLoginWindow();
-});
-
 app.whenReady().then(() => {
-    createLoginWindow();
+    createWindow();
 
     app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createLoginWindow();
-        }
+        if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
 });
 
@@ -69,7 +29,12 @@ app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
 });
 
-ipcMain.on("redirect-to-login", () => {
-    if (loginWindow) return;
-    createLoginWindow();
+// IPC: логин успешен
+ipcMain.on("login-success", () => {
+    mainWindow.loadFile("mainwindow.html");
+});
+
+// IPC: логаут
+ipcMain.on("logout", () => {
+    mainWindow.loadFile("login.html");
 });

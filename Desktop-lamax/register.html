@@ -19,29 +19,19 @@
 </div>
 
 <script>
-    const API_URL = "http://193.233.86.5:3000/api"; // сервер
-
     document.getElementById("register-btn").addEventListener("click", async () => {
         const username = document.getElementById("new-username").value.trim();
         const nickname = document.getElementById("nickname").value.trim();
         const password = document.getElementById("new-password").value.trim();
         const confirm = document.getElementById("confirm-password").value.trim();
 
-        if (!username || !nickname || !password || !confirm) {
-            return alert("Заполните все поля!");
-        }
-        if (!nickname.startsWith("@")) {
-            return alert("Ник должен начинаться с @");
-        }
-        if (password.length < 6) {
-            return alert("Пароль должен быть не меньше 6 символов");
-        }
-        if (password !== confirm) {
-            return alert("Пароли не совпадают");
-        }
+        if (!username || !nickname || !password || !confirm) return alert("Заполните все поля!");
+        if (!nickname.startsWith("@")) return alert("Ник должен начинаться с @");
+        if (password.length < 6) return alert("Пароль должен быть не меньше 6 символов");
+        if (password !== confirm) return alert("Пароли не совпадают");
 
         try {
-            const res = await fetch(`${API_URL}/register`, {
+            const res = await fetch("http://193.233.86.5:4000/api/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, nickname, password })
@@ -50,13 +40,7 @@
 
             if (res.ok) {
                 alert("Регистрация успешна! Теперь войдите.");
-
-                // Для Electron:
-                if (window.electronAPI) {
-                    window.electronAPI.redirectToLogin();
-                } else {
-                    window.location.href = "Login.html";
-                }
+                if (window.electronAPI) window.electronAPI.redirectToLogin();
             } else {
                 alert(data.error || "Ошибка регистрации");
             }
@@ -66,5 +50,6 @@
         }
     });
 </script>
+
 </body>
 </html>

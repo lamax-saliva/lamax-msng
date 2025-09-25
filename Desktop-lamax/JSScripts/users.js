@@ -1,57 +1,65 @@
-function initUserSystem(socket, currentUser, currentNick, callSystem, chatSystem) {
+function initUserSystem(socket, currentUser, currentNick, chatSystem) {
+    const API_URL = "http://193.233.86.5:4000/api";
     const userList = document.getElementById("user-list");
     const searchUser = document.getElementById("search-user");
-    const chatList = document.getElementById("chat-list");
 
-    let onlineUsers = [];
-
-    socket.on("presence:list", (list) => {
-        onlineUsers = list;
-        renderUsers(searchUser.value);
-    });
-
-    async function renderUsers(filter="") {
+    async function fetchUsers(filter = "") {
         try {
-            const res = await fetch("http://193.233.86.5:3000/api/users");
+            console.log("Загрузка пользователей с сервера...");
+            const res = await fetch(`${API_URL}/users`);
             const users = await res.json();
+            console.log("Получено пользователей:", users);
+
             userList.innerHTML = "";
 
             users.forEach(u => {
-                const isOnline = onlineUsers.includes(u.username);
+                if (filter && !u.nickname.toLowerCase().includes(filter.toLowerCase())) return;
+
                 const div = document.createElement("div");
                 div.className = "user-list-item";
-                div.innerHTML = `
-          <div class="user-avatar-small">${u.username.charAt(0)}</div>
-          <div class="user-info">
-            <div class="user-name">${u.username}</div>
-            <div class="user-title">${u.nickname}</div>
-            <div class="user-status" style="color:${isOnline ? 'limegreen' : 'gray'};">
-              ${isOnline ? "В сети" : "Не в сети"}
-            </div>
-          </div>
-          <button class="user-action-btn">Написать</button>`;
-                div.querySelector("button").addEventListener("click", () => openPrivateChat(u.username, u.nickname));
-                if (filter && !u.nickname.toLowerCase().includes(filter.toLowerCase())) {
-                    div.style.display = "none";
-                }
+                div.textContent = `${u.username} (${u.nickname})`;
+
+                div.addEventListener("click", () => {
+                    // Приватный чат
+                    const roomId = chatSystem.pvRoomId(currentNick, u.username);
+
+                    if (!document.querySelector(`.chat-item[data-room="${roomId}"]`)) {
+                        const chatEl = document.createElement("div");
+                        chatEl.className = "chat-item";
+                        chatEl.dataset.room = roomId;
+                        chatEl.textContent = `💬 ${u.nickname}`;
+                        document.getElementById("chat-list").appendChild(chatEl);
+                    }
+
+                    chatSystem.activateChatItem(roomId, u.nickname, `Приватный чат с ${u.nickname}`);
+                });
+
                 userList.appendChild(div);
             });
-        } catch (e) { console.error(e); }
-    }
 
-    function openPrivateChat(username, nickname) {
-        callSystem.setPeer(username);
-        const roomId = chatSystem.pvRoomId(currentUser, username);
-        if (!document.querySelector(`.chat-item[data-room="${roomId}"]`)) {
-            const div = document.createElement("div");
-            div.className = "chat-item";
-            div.dataset.room = roomId;
-            div.textContent = `💬 Чат с ${nickname}`;
-            chatList.appendChild(div);
+            if (userList.children.length === 0) {
+                userList.innerHTML = "<p>Пользователи не найдены</p>";
+            }
+
+        } catch (err) {
+            console.error("Ошибка загрузки пользователей:", err);
+            userList.innerHTML = "<p>Ошибка загрузки пользователей</p>";
         }
-        chatSystem.activateChatItem(roomId, `Чат с ${nickname}`, `Логин: ${username}`);
     }
 
-    renderUsers();
-    searchUser.addEventListener("input", () => renderUsers(searchUser.value));
+    // Поиск пользователей
+    if (searchUser) {
+        searchUser.addEventListener("input", () => fetchUsers(searchUser.value));
+    }
+
+    // Авто-загрузка при открытии вкладки "users"
+    const usersTabButton = document.querySelector('[data-tab="users"]');
+    if (usersTabButton) {
+        usersTabButton.addEventListener("click", () => {
+            fetchUsers(searchUser?.value || "");
+        });
+    }
+
+    // Первоначальная загрузка сразу
+    fetchUsers();
 }
