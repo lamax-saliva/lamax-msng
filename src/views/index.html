@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lamax - Регистрация</title>
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+<div class="logo">💬</div>
+<h1>Lamax</h1>
+<p class="subtitle">Современный мессенджер с системой регистрации. Общайтесь в реальном времени с друзьями и коллегами</p>
+
+<div class="status">
+    <div class="status-dot"></div>
+    <span>Сервер работает на порту <span id="serverPort" class="stats-number">3000</span></span>
+</div>
+
+<div class="auth-container">
+    <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchTab('login')">Вход</div>
+        <div class="auth-tab" onclick="switchTab('register')">Регистрация</div>
+    </div>
+
+    <form id="loginForm" class="auth-form active">
+        <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+            <label for="loginPassword">Пароль</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn">Войти в аккаунт</button>
+        <div id="loginError" class="error-message"></div>
+        <div id="loginSuccess" class="success-message"></div>
+    </form>
+
+    <form id="registerForm" class="auth-form">
+        <div class="form-group">
+            <label for="registerEmail">Email</label>
+            <input type="email" id="registerEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+            <label for="registerUsername">Имя пользователя</label>
+            <input type="text" id="registerUsername" placeholder="Ваше имя" required>
+        </div>
+        <div class="form-group">
+            <label for="registerPassword">Пароль</label>
+            <input type="password" id="registerPassword" placeholder="••••••••" required>
+        </div>
+        <div class="form-group">
+            <label for="registerConfirmPassword">Подтвердите пароль</label>
+            <input type="password" id="registerConfirmPassword" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn">Создать аккаунт</button>
+        <div id="registerError" class="error-message"></div>
+        <div id="registerSuccess" class="success-message"></div>
+    </form>
+</div>
+
+<div class="info">
+    <h3>📡 Информация о сервере:</h3>
+    <p><strong>Адрес:</strong> <span id="serverAddress" class="stats-number">193.233.86.5:3000</span></p>
+    <p><strong>Статус:</strong> <span style="color: #57F287; animation: blink 2s infinite;">● Онлайн</span></p>
+    <p><strong>Пользователей:</strong> <span id="userCount" class="stats-number">0</span></p>
+    <p><strong>Онлайн:</strong> <span id="onlineCount" class="stats-number">0</span></p>
+</div>
+
+<script>
+    let currentTab = 'login';
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+
+        document.querySelector('.auth-tabs').className = `auth-tabs ${tab}`;
+        document.querySelector('.auth-tab[onclick*="' + tab + '"]').classList.add('active');
+        document.getElementById(tab + 'Form').classList.add('active');
+
+        document.getElementById(tab + 'Error').style.display = 'none';
+        document.getElementById(tab + 'Success').style.display = 'none';
+    }
+
+    function animateStat(element, newValue) {
+        if (element.textContent !== newValue) {
+            element.classList.add('updated');
+            element.textContent = newValue;
+            setTimeout(() => {
+                element.classList.remove('updated');
+            }, 500);
+        }
+    }
+
+    async function updateStats() {
+        try {
+            const response = await fetch('/api/stats');
+            const data = await response.json();
+
+            animateStat(document.getElementById('userCount'), data.total_users);
+            animateStat(document.getElementById('onlineCount'), data.online_users || 0);
+
+            const infoResponse = await fetch('/api/info');
+            const infoData = await infoResponse.json();
+            if (infoData.server_url) {
+                const url = new URL(infoData.server_url);
+                animateStat(document.getElementById('serverAddress'), url.host);
+                animateStat(document.getElementById('serverPort'), url.port || 80);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки статистики:', error);
+        }
+    }
+
+    // Обработка входа
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+        const successDiv = document.getElementById('loginSuccess');
+
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                successDiv.textContent = '✅ Вход выполнен успешно!';
+                successDiv.style.display = 'block';
+
+                // Анимация успеха
+                document.querySelector('.btn').style.background = 'var(--secondary)';
+                setTimeout(() => {
+                    document.querySelector('.btn').style.background = 'var(--primary)';
+                }, 1000);
+
+                // Сохраняем сессию
+                localStorage.setItem('lamax_session', JSON.stringify({
+                    sessionId: data.sessionId,
+                    user: data.user
+                }));
+
+                // Перенаправляем в мессенджер
+                setTimeout(() => {
+                    window.location.href = '/app';
+                }, 1000);
+            } else {
+                errorDiv.textContent = '❌ ' + data.message;
+                errorDiv.style.display = 'block';
+
+                // Анимация ошибки
+                const btn = document.querySelector('.btn');
+                btn.style.animation = 'none';
+                setTimeout(() => {
+                    btn.style.animation = 'pulse 0.5s ease';
+                }, 10);
+            }
+        } catch (error) {
+            errorDiv.textContent = '❌ Ошибка соединения с сервером';
+            errorDiv.style.display = 'block';
+        }
+    });
+
+    // Обработка регистрации
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('registerEmail').value;
+        const username = document.getElementById('registerUsername').value;
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('registerConfirmPassword').value;
+        const errorDiv = document.getElementById('registerError');
+        const successDiv = document.getElementById('registerSuccess');
+
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+
+        // Проверка паролей
+        if (password !== confirmPassword) {
+            errorDiv.textContent = '❌ Пароли не совпадают';
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        if (password.length < 6) {
+            errorDiv.textContent = '❌ Пароль должен содержать минимум 6 символов';
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, username, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                successDiv.textContent = '✅ Регистрация успешна! Выполняется вход...';
+                successDiv.style.display = 'block';
+
+                // Анимация успеха
+                document.querySelector('.btn').style.background = 'var(--secondary)';
+                setTimeout(() => {
+                    document.querySelector('.btn').style.background = 'var(--primary)';
+                }, 1000);
+
+                // Сохраняем сессию
+                localStorage.setItem('lamax_session', JSON.stringify({
+                    sessionId: data.sessionId,
+                    user: data.user
+                }));
+
+                // Перенаправляем в мессенджер
+                setTimeout(() => {
+                    window.location.href = '/app';
+                }, 1500);
+            } else {
+                errorDiv.textContent = '❌ ' + data.message;
+                errorDiv.style.display = 'block';
+
+                // Анимация ошибки
+                const btn = document.querySelector('.btn');
+                btn.style.animation = 'none';
+                setTimeout(() => {
+                    btn.style.animation = 'pulse 0.5s ease';
+                }, 10);
+            }
+        } catch (error) {
+            errorDiv.textContent = '❌ Ошибка соединения с сервером';
+            errorDiv.style.display = 'block';
+        }
+    });
+
+    // Проверяем существующую сессию
+    function checkExistingSession() {
+        const sessionData = localStorage.getItem('lamax_session');
+        if (sessionData) {
+            try {
+                const session = JSON.parse(sessionData);
+                fetch('/api/auth/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: session.sessionId })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.valid) {
+                            // Анимация перехода
+                            document.body.style.animation = 'fadeIn 0.5s ease reverse';
+                            setTimeout(() => {
+                                window.location.href = '/app';
+                            }, 500);
+                        } else {
+                            localStorage.removeItem('lamax_session');
+                        }
+                    });
+            } catch (error) {
+                localStorage.removeItem('lamax_session');
+            }
+        }
+    }
+
+    // Обновляем статистику
+    updateStats();
+    setInterval(updateStats, 10000);
+
+    // Проверяем сессию при загрузке
+    checkExistingSession();
+
+    // Добавляем эффекты при наведении
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('focus', () => {
+            input.parentElement.style.transform = 'translateY(-2px)';
+        });
+        input.addEventListener('blur', () => {
+            input.parentElement.style.transform = 'translateY(0)';
+        });
+    })
+
+    // Анимация логотипа
+    document.querySelector('.logo').addEventListener('mouseenter', function() {
+        this.style.transform = 'rotate(10deg) scale(1.1)';
+    });
+
+    document.querySelector('.logo').addEventListener('mouseleave', function() {
+        this.style.transform = 'rotate(0) scale(1)';
+    });
+</script>
+</body>
+</html>

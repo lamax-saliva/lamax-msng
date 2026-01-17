@@ -1,0 +1,26 @@
+{
+  "name": "lamax-msng",
+  "version": "1.0.0",
+  "description": "Modern Discord+Telegram style messenger",
+  "main": "src/server/index.js",
+  "scripts": {
+    "start": "node src/server/index.js",
+    "dev": "nodemon src/server/index.js",
+    "client": "cd src/client && live-server --port=3000"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "socket.io": "^4.8.3",
+    "uuid": "^9.0.1",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
