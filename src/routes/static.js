@@ -6,10 +6,13 @@ module.exports = function(app) {
     app.use('/static', express.static(path.join(__dirname, '../public')));
     app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-    // САМОЕ ВАЖНОЕ: Добавьте эту строку - раздаем файлы из views
+    // Статические файлы из static (JS, CSS)
+    app.use('/static', express.static(path.join(__dirname, '../static')));
+
+    // Раздаем файлы из views
     app.use(express.static(path.join(__dirname, '../views')));
 
-    // Также раздаем файлы из корня
+    // Раздаем файлы из корня
     app.use(express.static(path.join(__dirname, '..')));
 
     // Favicon
@@ -17,14 +20,15 @@ module.exports = function(app) {
         const faviconPath = path.join(__dirname, '../public/favicon.ico');
         res.sendFile(faviconPath, (err) => {
             if (err) {
-                // Если нет favicon, ничего не делаем
                 res.status(204).end();
             }
         });
     });
 
-    console.log('✅ Static middleware настроен. CSS доступны по:');
-    console.log('   /styles.css → views/styles.css');
+    console.log('✅ Static middleware настроен');
+    console.log('   /static/voice-chat.js → static/voice-chat.js');
+    console.log('   /static/app.js → static/app.js');
+    console.log('   /static/voice-chat.css → static/voice-chat.css');
     console.log('   /auth.css → views/auth.css');
-    console.log('   /static/* → public/*');
+    console.log('   /styles.css → views/styles.css');
 };

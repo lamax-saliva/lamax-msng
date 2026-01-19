@@ -148,6 +148,44 @@ module.exports = function(io, authManager, sessionManager, roomManager) {
             console.log('💬 ' + user.username + ' в ' + roomId + ': ' + content.substring(0, 50) + (content.length > 50 ? '...' : ''));
         });
 
+        // ========== ОБРАБОТЧИКИ ГОЛОСОВОГО ЧАТА ==========
+
+        // Присоединение к голосовому чату
+        socket.on('join-voice-room', (roomId) => {
+            const userId = socket.userId;
+            if (!userId || !onlineUsers.has(userId)) return;
+
+            const user = onlineUsers.get(userId);
+
+            // Уведомляем других пользователей в текстовом чате
+            socket.to(roomId).emit('voice-user-joined', {
+                userId: user.id,
+                username: user.username,
+                roomId: roomId,
+                timestamp: new Date()
+            });
+
+            console.log(`🎤 ${user.username} присоединился к голосовому чату ${roomId}`);
+        });
+
+        // Выход из голосового чата
+        socket.on('leave-voice-room', (roomId) => {
+            const userId = socket.userId;
+            if (!userId || !onlineUsers.has(userId)) return;
+
+            const user = onlineUsers.get(userId);
+
+            // Уведомляем других пользователей
+            socket.to(roomId).emit('voice-user-left', {
+                userId: user.id,
+                username: user.username,
+                roomId: roomId,
+                timestamp: new Date()
+            });
+
+            console.log(`🎤 ${user.username} покинул голосовой чат ${roomId}`);
+        });
+
         // Отключение
         socket.on('disconnect', () => {
             const userId = socket.userId;

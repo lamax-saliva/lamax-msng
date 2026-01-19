@@ -1,0 +1,1065 @@
+/* Голосовой чат - Discord-like интерфейс */
+:root {
+    --vc-primary: #5865F2;
+    --vc-primary-dark: #4752C4;
+    --vc-secondary: #57F287;
+    --vc-danger: #ED4245;
+    --vc-warning: #FEE75C;
+    --vc-bg-primary: #1e1f29;
+    --vc-bg-secondary: #2a2d3e;
+    --vc-bg-tertiary: #3a3e5b;
+    --vc-text-primary: #FFFFFF;
+    --vc-text-secondary: #B9BBBE;
+    --vc-text-muted: #8a8d94;
+    --vc-border: #404354;
+    --vc-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --vc-glow: 0 0 20px rgba(88, 101, 242, 0.3);
+    --vc-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Скрываем основной интерфейс мессенджера при открытом голосовом чате */
+body.voice-chat-active .app-container {
+    display: none !important;
+}
+
+body.voice-chat-active .loading-screen {
+    display: none !important;
+}
+
+/* Контейнер голосового чата */
+.voice-chat-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: linear-gradient(135deg, #0c0c14 0%, #1a1a2e 100%) !important;
+    z-index: 9999 !important;
+    display: flex;
+    flex-direction: column;
+    animation: vc-fadeIn 0.4s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+}
+
+/* Анимации */
+@keyframes vc-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes vc-slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes vc-slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes vc-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes vc-glow {
+    0%, 100% {
+        box-shadow: 0 0 10px var(--vc-primary);
+    }
+    50% {
+        box-shadow: 0 0 25px var(--vc-primary);
+    }
+}
+
+@keyframes vc-ripple {
+    0% {
+        transform: scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+@keyframes vc-float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes vc-slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes vc-slideOutToRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+@keyframes vc-wave {
+    0%, 100% { height: 10px; }
+    50% { height: 25px; }
+}
+
+@keyframes vc-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Шапка голосового чата */
+.vc-header {
+    padding: 20px 30px;
+    background: rgba(30, 31, 41, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--vc-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: vc-slideDown 0.4s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.vc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.vc-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vc-logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--vc-primary), #8957E5);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.4rem;
+    animation: vc-pulse 3s infinite, vc-glow 2s infinite;
+}
+
+.vc-logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--vc-primary), #57F287);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 0.5px;
+}
+
+.vc-room-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-left: 20px;
+    border-left: 2px solid var(--vc-border);
+}
+
+.vc-room-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--vc-bg-tertiary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--vc-primary);
+    font-size: 1.2rem;
+}
+
+.vc-room-details h3 {
+    color: var(--vc-text-primary);
+    font-size: 1.2rem;
+    margin-bottom: 3px;
+}
+
+.vc-room-details p {
+    color: var(--vc-text-secondary);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vc-status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--vc-secondary);
+    border-radius: 50%;
+    animation: vc-pulse 2s infinite;
+}
+
+.vc-header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Контролы */
+.vc-controls {
+    display: flex;
+    gap: 12px;
+}
+
+.vc-control-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--vc-bg-secondary);
+    border: 2px solid var(--vc-border);
+    color: var(--vc-text-primary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--vc-transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.vc-control-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.6s ease;
+}
+
+.vc-control-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--vc-primary);
+    box-shadow: var(--vc-glow);
+}
+
+.vc-control-btn:hover::before {
+    left: 100%;
+}
+
+.vc-control-btn.active {
+    background: var(--vc-primary);
+    border-color: var(--vc-primary);
+    animation: vc-pulse 2s infinite;
+}
+
+.vc-control-btn.mute {
+    background: var(--vc-danger);
+    border-color: var(--vc-danger);
+}
+
+.vc-control-btn.mute:hover {
+    background: #ff3333;
+    border-color: #ff3333;
+}
+
+.vc-control-btn.disconnect {
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+    border: none;
+    animation: vc-pulse 1.5s infinite;
+}
+
+.vc-control-btn.disconnect:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 0 30px rgba(255, 65, 108, 0.5);
+}
+
+/* Основная область */
+.vc-main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Список участников */
+.vc-participants-sidebar {
+    width: 280px;
+    background: rgba(30, 31, 41, 0.8);
+    border-right: 1px solid var(--vc-border);
+    display: flex;
+    flex-direction: column;
+    animation: vc-slideDown 0.4s ease 0.1s both;
+}
+
+.vc-participants-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--vc-border);
+}
+
+.vc-participants-header h3 {
+    color: var(--vc-text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.vc-participants-header h3 i {
+    color: var(--vc-primary);
+}
+
+.vc-participants-count {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--vc-text-secondary);
+    font-size: 0.9rem;
+}
+
+.vc-participants-list {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+/* Информация о соединении */
+.vc-connection-info {
+    padding: 20px;
+    border-top: 1px solid var(--vc-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.vc-connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--vc-text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.vc-connection-status.active {
+    color: var(--vc-secondary);
+}
+
+.vc-connection-status.active .vc-status-dot {
+    background: var(--vc-secondary);
+}
+
+.vc-ping {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--vc-text-muted);
+    font-size: 0.85rem;
+}
+
+.vc-ping-value {
+    color: var(--vc-secondary);
+    font-weight: 600;
+}
+
+/* Карточка участника */
+.vc-participant-card {
+    background: rgba(42, 45, 62, 0.6);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 12px;
+    transition: var(--vc-transition);
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: vc-slideUp 0.3s ease forwards;
+}
+
+.vc-participant-card:hover {
+    background: rgba(58, 62, 91, 0.8);
+    border-color: var(--vc-primary);
+    transform: translateX(5px) translateY(0);
+}
+
+.vc-participant-card.you {
+    background: rgba(88, 101, 242, 0.15);
+    border-color: var(--vc-primary);
+}
+
+.vc-participant-card.speaking {
+    border-color: var(--vc-secondary);
+    box-shadow: 0 0 20px rgba(87, 242, 135, 0.2);
+}
+
+.vc-participant-card.muted {
+    opacity: 0.7;
+}
+
+.vc-participant-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.vc-participant-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--vc-primary);
+    transition: var(--vc-transition);
+    position: relative;
+}
+
+.vc-participant-card:hover .vc-participant-avatar {
+    border-color: var(--vc-secondary);
+    transform: scale(1.05);
+}
+
+.vc-participant-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vc-participant-status {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid var(--vc-bg-secondary);
+    background: var(--vc-secondary);
+    transition: var(--vc-transition);
+}
+
+.vc-participant-card.muted .vc-participant-status,
+.vc-participant-status.muted {
+    background: var(--vc-danger);
+}
+
+.vc-participant-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vc-participant-name {
+    color: var(--vc-text-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vc-participant-role {
+    color: var(--vc-text-secondary);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.vc-you-badge {
+    background: var(--vc-primary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Визуализация звука */
+.vc-audio-visualization {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.vc-audio-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 30px;
+    padding: 0 5px;
+}
+
+.vc-audio-bar {
+    flex: 1;
+    background: linear-gradient(to top, var(--vc-primary), var(--vc-secondary));
+    border-radius: 2px;
+    min-height: 3px;
+    transition: height 0.1s ease;
+    animation: vc-float 1s infinite;
+}
+
+.vc-audio-bar:nth-child(1) { animation-delay: 0.1s; }
+.vc-audio-bar:nth-child(2) { animation-delay: 0.2s; }
+.vc-audio-bar:nth-child(3) { animation-delay: 0.3s; }
+.vc-audio-bar:nth-child(4) { animation-delay: 0.4s; }
+.vc-audio-bar:nth-child(5) { animation-delay: 0.5s; }
+.vc-audio-bar:nth-child(6) { animation-delay: 0.6s; }
+.vc-audio-bar:nth-child(7) { animation-delay: 0.7s; }
+
+/* Основная область чата */
+.vc-chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(12, 12, 20, 0.9), rgba(26, 26, 46, 0.9));
+    position: relative;
+    overflow: hidden;
+}
+
+.vc-chat-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+            radial-gradient(circle at 20% 30%, rgba(88, 101, 242, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(87, 242, 135, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.vc-welcome-message {
+    text-align: center;
+    max-width: 600px;
+    margin: auto;
+    animation: vc-slideUp 0.6s ease 0.3s both;
+}
+
+.vc-welcome-icon {
+    font-size: 4rem;
+    color: var(--vc-primary);
+    margin-bottom: 20px;
+    animation: vc-pulse 3s infinite;
+    filter: drop-shadow(0 0 20px rgba(88, 101, 242, 0.5));
+}
+
+.vc-welcome-message h2 {
+    color: var(--vc-text-primary);
+    font-size: 2.2rem;
+    margin-bottom: 15px;
+    background: linear-gradient(135deg, var(--vc-primary), var(--vc-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.vc-welcome-message p {
+    color: var(--vc-text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+/* Сетка участников (основной вид) */
+.vc-participants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    animation: vc-fadeIn 0.5s ease 0.2s both;
+}
+
+.vc-grid-participant {
+    background: rgba(42, 45, 62, 0.7);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    transition: var(--vc-transition);
+    border: 2px solid transparent;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    transform: scale(0.9);
+    animation: vc-scaleUp 0.3s ease forwards;
+}
+
+@keyframes vc-scaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.vc-grid-participant:hover {
+    transform: translateY(-5px) scale(1.02);
+    border-color: var(--vc-primary);
+    box-shadow: var(--vc-shadow);
+}
+
+.vc-grid-participant.speaking {
+    border-color: var(--vc-secondary);
+    box-shadow: 0 0 30px rgba(87, 242, 135, 0.3);
+}
+
+.vc-grid-participant.you {
+    border-color: var(--vc-primary);
+    background: rgba(88, 101, 242, 0.2);
+}
+
+.vc-grid-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    border: 3px solid var(--vc-primary);
+    overflow: hidden;
+    position: relative;
+    transition: var(--vc-transition);
+}
+
+.vc-grid-participant:hover .vc-grid-avatar {
+    border-color: var(--vc-secondary);
+    transform: scale(1.1);
+}
+
+.vc-grid-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vc-grid-name {
+    color: var(--vc-text-primary);
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vc-grid-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--vc-text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+}
+
+.vc-sound-waves {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    height: 30px;
+    margin-top: 10px;
+}
+
+.vc-sound-wave {
+    width: 4px;
+    background: linear-gradient(to top, var(--vc-primary), var(--vc-secondary));
+    border-radius: 2px;
+    animation: vc-wave 1.5s infinite ease-in-out;
+}
+
+.vc-sound-wave:nth-child(1) { animation-delay: 0.1s; height: 10px; }
+.vc-sound-wave:nth-child(2) { animation-delay: 0.2s; height: 15px; }
+.vc-sound-wave:nth-child(3) { animation-delay: 0.3s; height: 20px; }
+.vc-sound-wave:nth-child(4) { animation-delay: 0.4s; height: 15px; }
+.vc-sound-wave:nth-child(5) { animation-delay: 0.5s; height: 10px; }
+
+/* Панель управления внизу */
+.vc-control-panel {
+    padding: 20px 30px;
+    background: rgba(30, 31, 41, 0.95);
+    border-top: 1px solid var(--vc-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: vc-slideUp 0.4s ease;
+}
+
+.vc-control-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.vc-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--vc-text-secondary);
+    font-size: 0.9rem;
+}
+
+.vc-volume-slider {
+    width: 120px;
+    height: 6px;
+    background: var(--vc-bg-tertiary);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.vc-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--vc-primary);
+    cursor: pointer;
+    transition: var(--vc-transition);
+}
+
+.vc-volume-slider::-webkit-slider-thumb:hover {
+    background: var(--vc-primary-dark);
+    transform: scale(1.2);
+}
+
+.vc-info-stats {
+    display: flex;
+    gap: 25px;
+}
+
+.vc-stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--vc-text-secondary);
+    font-size: 0.9rem;
+}
+
+.vc-stat i {
+    color: var(--vc-primary);
+    font-size: 1rem;
+}
+
+.vc-stat-value {
+    color: var(--vc-text-primary);
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+/* Уведомления */
+.vc-notification {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, var(--vc-primary), #3a3e5b);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: var(--vc-shadow);
+    z-index: 10001;
+    animation: vc-slideDown 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    max-width: 350px;
+    border-left: 4px solid var(--vc-secondary);
+    backdrop-filter: blur(10px);
+}
+
+.vc-notification-icon {
+    font-size: 1.5rem;
+    color: var(--vc-secondary);
+}
+
+.vc-notification-content {
+    flex: 1;
+}
+
+.vc-notification-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 1.1rem;
+}
+
+.vc-notification-message {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+.vc-notification-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: var(--vc-transition);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vc-notification-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: rotate(90deg);
+}
+
+/* Кнопка возврата в мессенджер */
+.vc-back-to-chat {
+    position: absolute;
+    top: 25px;
+    left: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--vc-text-secondary);
+    text-decoration: none;
+    font-size: 0.95rem;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    transition: var(--vc-transition);
+    z-index: 10001;
+}
+
+.vc-back-to-chat:hover {
+    color: var(--vc-primary);
+    background: rgba(88, 101, 242, 0.1);
+    transform: translateX(-5px);
+}
+
+.vc-back-to-chat i {
+    font-size: 1rem;
+}
+
+/* Иконки статусов */
+.vc-icon-mic {
+    color: var(--vc-secondary);
+}
+
+.vc-icon-mic-muted {
+    color: var(--vc-danger);
+}
+
+.vc-icon-headphones {
+    color: var(--vc-primary);
+}
+
+.vc-icon-signal {
+    color: var(--vc-warning);
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    .vc-participants-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+}
+
+@media (max-width: 992px) {
+    .vc-main {
+        flex-direction: column;
+    }
+
+    .vc-participants-sidebar {
+        width: 100%;
+        height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--vc-border);
+    }
+
+    .vc-participants-list {
+        display: flex;
+        overflow-x: auto;
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .vc-participant-card {
+        min-width: 200px;
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .vc-header {
+        padding: 15px;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .vc-header-left, .vc-header-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .vc-room-info {
+        padding-left: 0;
+        border-left: none;
+    }
+
+    .vc-control-panel {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .vc-control-group, .vc-info-stats {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .vc-participants-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .vc-grid-avatar {
+        width: 60px;
+        height: 60px;
+    }
+
+    .vc-back-to-chat {
+        top: 15px;
+        left: 15px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Эффект загрузки */
+.vc-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100;
+    backdrop-filter: blur(5px);
+}
+
+.vc-loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid var(--vc-bg-tertiary);
+    border-top-color: var(--vc-primary);
+    border-radius: 50%;
+    animation: vc-spin 1s linear infinite;
+}
+
+.vc-loading-text {
+    color: var(--vc-text-secondary);
+    font-size: 1.1rem;
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Классы для анимаций */
+.vc-slide-in {
+    animation: vc-slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.vc-slide-out {
+    animation: vc-slideOutToRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Scrollbar */
+.vc-participants-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.vc-participants-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.vc-participants-list::-webkit-scrollbar-thumb {
+    background: var(--vc-primary);
+    border-radius: 3px;
+}
+
+.vc-participants-list::-webkit-scrollbar-thumb:hover {
+    background: var(--vc-primary-dark);
+}
+/* Добавьте в voice-chat.css */
+.vc-participant-card.speaking {
+    border-left: 3px solid #43b581;
+    background: rgba(67, 181, 129, 0.1);
+}
+
+.vc-grid-participant.speaking {
+    box-shadow: 0 0 0 2px #43b581;
+}
+
+.vc-participant-card.has-audio::after {
+    content: '🎧';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 12px;
+}
+
+/* Индикатор говорящего */
+.speaking-indicator {
+    width: 10px;
+    height: 10px;
+    background: #43b581;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
