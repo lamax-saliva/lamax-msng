@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lamax 💬</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/views/css/styles.css">
     <link rel="stylesheet" href="/static/voice-chat.css">
+
+    <!-- Добавляем Steam стили -->
+    <link rel="stylesheet" href="/views/css/steam-games.css">
     <style>
         /* Добавляем стили для разделителя дат */
         .time-marker {
@@ -63,6 +66,41 @@
             z-index: 1000;
             animation: slideInRight 0.3s ease, slideInRight 0.3s ease 3s reverse forwards;
         }
+
+        /* Steam Overlay адаптация */
+        .steam-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .steam-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .steam-container {
+            position: relative;
+            animation: scaleIn 0.3s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -85,9 +123,13 @@
         <div class="server-icon">
             <i class="fas fa-hashtag"></i>
         </div>
-        <div class="server-icon">
+
+        <!-- Steam кнопка в сайдбаре -->
+        <div class="server-icon" id="steamSidebarBtn" title="Steam игры и друзья">
             <i class="fas fa-gamepad"></i>
+            <div class="server-badge" id="steamOnlineCount" style="display: none;">0</div>
         </div>
+
         <div class="server-icon">
             <i class="fas fa-music"></i>
         </div>
@@ -236,11 +278,377 @@
     </div>
 </div>
 
+<!-- Steam Integration Overlay -->
+<div class="steam-overlay" id="steamOverlay">
+    <div class="steam-container" id="steamContainer">
+        <!-- Заголовок -->
+        <div class="steam-header">
+            <div class="steam-header-left">
+                <div class="steam-logo">
+                    <div class="steam-logo-icon">
+                        <i class="fab fa-steam"></i>
+                    </div>
+                    <div class="steam-logo-text">Steam Games</div>
+                </div>
+
+                <div class="steam-user-info" id="steamUserInfo">
+                    <div class="steam-user-avatar">
+                        <img src="https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/avatars/fe/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg"
+                             alt="Steam Avatar" id="steamAvatar">
+                        <div class="steam-user-status" id="steamStatus">
+                            <i class="fas fa-circle"></i>
+                        </div>
+                    </div>
+                    <div class="steam-user-details">
+                        <h3 id="steamUsername">Войти в Steam</h3>
+                        <p id="steamLevel">Уровень: --</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="steam-header-right">
+                <div class="steam-controls">
+                    <button class="steam-btn refresh-btn" title="Обновить" id="steamRefresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="steam-btn settings-btn" title="Настройки">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="steam-btn close-btn" title="Закрыть" id="steamClose">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основная панель -->
+        <div class="steam-main">
+            <!-- Боковая панель навигации -->
+            <div class="steam-sidebar">
+                <div class="steam-nav">
+                    <button class="steam-nav-btn active" data-tab="friends">
+                        <i class="fas fa-users"></i>
+                        <span>Друзья онлайн</span>
+                        <span class="steam-badge" id="onlineCount">0</span>
+                    </button>
+
+                    <button class="steam-nav-btn" data-tab="games">
+                        <i class="fas fa-gamepad"></i>
+                        <span>Мои игры</span>
+                        <span class="steam-badge" id="gamesCount">0</span>
+                    </button>
+
+                    <button class="steam-nav-btn" data-tab="recent">
+                        <i class="fas fa-history"></i>
+                        <span>Недавние игры</span>
+                    </button>
+
+                    <button class="steam-nav-btn" data-tab="achievements">
+                        <i class="fas fa-trophy"></i>
+                        <span>Достижения</span>
+                        <span class="steam-badge" id="achievementsCount">0</span>
+                    </button>
+                </div>
+
+                <div class="steam-login-panel" id="steamLoginPanel">
+                    <div class="steam-login-header">
+                        <i class="fab fa-steam"></i>
+                        <h4>Вход в Steam</h4>
+                    </div>
+                    <p class="steam-login-text">
+                        Войдите через Steam, чтобы увидеть друзей и их игры
+                    </p>
+                    <button class="steam-login-btn" id="steamLoginBtn">
+                        <i class="fab fa-steam"></i>
+                        Войти через Steam
+                    </button>
+                    <div class="steam-login-alternative">
+                        <p>Или введите Steam ID вручную:</p>
+                        <div class="steam-input-group">
+                            <input type="text"
+                                   class="steam-input"
+                                   id="steamIdInput"
+                                   placeholder="76561198000000000">
+                            <button class="steam-btn" id="steamIdBtn">OK</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="steam-stats" id="steamStatsPanel" style="display: none;">
+                    <div class="steam-stat">
+                        <i class="fas fa-clock"></i>
+                        <span>Время в играх:</span>
+                        <span class="steam-stat-value" id="totalPlaytime">0 ч</span>
+                    </div>
+                    <div class="steam-stat">
+                        <i class="fas fa-gamepad"></i>
+                        <span>Всего игр:</span>
+                        <span class="steam-stat-value" id="totalGames">0</span>
+                    </div>
+                    <div class="steam-stat">
+                        <i class="fas fa-calendar"></i>
+                        <span>В Steam с:</span>
+                        <span class="steam-stat-value" id="memberSince">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Основное содержимое -->
+            <div class="steam-content">
+                <!-- Друзья онлайн -->
+                <div class="steam-tab active" id="friendsTab">
+                    <div class="steam-tab-header">
+                        <h3><i class="fas fa-users"></i> Друзья онлайн</h3>
+                        <div class="steam-search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Поиск друзей..." id="friendsSearch">
+                        </div>
+                    </div>
+
+                    <div class="friends-list" id="friendsList">
+                        <!-- Список друзей будет здесь -->
+                        <div class="steam-empty-state">
+                            <div class="steam-empty-icon">
+                                <i class="fas fa-users-slash"></i>
+                            </div>
+                            <h4>Нет друзей онлайн</h4>
+                            <p>Когда ваши друзья Steam будут онлайн, они появятся здесь</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Мои игры -->
+                <div class="steam-tab" id="gamesTab">
+                    <div class="steam-tab-header">
+                        <h3><i class="fas fa-gamepad"></i> Мои игры</h3>
+                        <div class="steam-search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Поиск игр..." id="gamesSearch">
+                        </div>
+                    </div>
+
+                    <div class="games-grid" id="gamesGrid">
+                        <!-- Игры будут здесь -->
+                        <div class="steam-empty-state">
+                            <div class="steam-empty-icon">
+                                <i class="fas fa-gamepad"></i>
+                            </div>
+                            <h4>Нет игр</h4>
+                            <p>Войдите в Steam, чтобы увидеть свою библиотеку игр</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Недавние игры -->
+                <div class="steam-tab" id="recentTab">
+                    <div class="steam-tab-header">
+                        <h3><i class="fas fa-history"></i> Недавние игры</h3>
+                    </div>
+
+                    <div class="recent-games" id="recentGames">
+                        <!-- Недавние игры будут здесь -->
+                    </div>
+                </div>
+
+                <!-- Достижения -->
+                <div class="steam-tab" id="achievementsTab">
+                    <div class="steam-tab-header">
+                        <h3><i class="fas fa-trophy"></i> Достижения</h3>
+                    </div>
+
+                    <div class="achievements-list" id="achievementsList">
+                        <!-- Достижения будут здесь -->
+                    </div>
+                </div>
+
+                <!-- Приглашение в голосовой чат -->
+                <div class="steam-invite-card" id="steamInviteCard" style="display: none;">
+                    <div class="steam-invite-header">
+                        <h4><i class="fas fa-phone-alt"></i> Голосовой чат</h4>
+                        <button class="steam-btn-close" id="closeInvite">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="steam-invite-content">
+                        <div class="steam-invite-user">
+                            <img src="" alt="User" id="inviteUserAvatar">
+                            <div class="steam-invite-details">
+                                <h5 id="inviteUserName">Пользователь</h5>
+                                <p>хочет присоединиться к голосовому чату</p>
+                            </div>
+                        </div>
+                        <div class="steam-invite-game">
+                            <img src="" alt="Game" id="inviteGameIcon">
+                            <div class="steam-invite-game-info">
+                                <p>Сейчас играет в:</p>
+                                <h6 id="inviteGameName">Игра</h6>
+                            </div>
+                        </div>
+                        <div class="steam-invite-actions">
+                            <button class="steam-btn-accept" id="acceptInvite">
+                                <i class="fas fa-phone-alt"></i> Принять
+                            </button>
+                            <button class="steam-btn-decline" id="declineInvite">
+                                <i class="fas fa-times"></i> Отклонить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Панель голосового чата -->
+            <div class="steam-voice-panel" id="steamVoicePanel">
+                <div class="steam-voice-header">
+                    <i class="fas fa-headphones"></i>
+                    <h4>Голосовой чат</h4>
+                    <button class="steam-voice-toggle" id="voiceToggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+
+                <div class="steam-voice-content" id="voiceContent">
+                    <div class="steam-voice-users" id="voiceUsers">
+                        <!-- Участники голосового чата -->
+                    </div>
+
+                    <div class="steam-voice-controls">
+                        <button class="steam-voice-btn mute-toggle" id="steamMuteToggle">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="steam-voice-btn disconnect" id="steamDisconnect">
+                            <i class="fas fa-phone-slash"></i>
+                        </button>
+                        <button class="steam-voice-btn invite" id="steamInvite">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Загрузка -->
+        <div class="steam-loading" id="steamLoading">
+            <div class="steam-loading-spinner"></div>
+            <div class="steam-loading-text">Загрузка данных Steam...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно входа -->
+<div class="steam-modal" id="steamModal">
+    <div class="steam-modal-content">
+        <div class="steam-modal-header">
+            <h3><i class="fab fa-steam"></i> Вход в Steam</h3>
+            <button class="steam-modal-close" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="steam-modal-body">
+            <div class="steam-login-options">
+                <div class="steam-login-option">
+                    <div class="steam-option-icon">
+                        <i class="fab fa-steam"></i>
+                    </div>
+                    <div class="steam-option-content">
+                        <h4>Войти через Steam</h4>
+                        <p>Быстрый вход через официальный API Steam</p>
+                        <button class="steam-btn-login" id="steamApiLogin">
+                            <i class="fab fa-steam"></i> Авторизация через Steam
+                        </button>
+                    </div>
+                </div>
+
+                <div class="steam-login-option">
+                    <div class="steam-option-icon">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <div class="steam-option-content">
+                        <h4>Ввести Steam ID вручную</h4>
+                        <p>Введите ваш Steam ID (64-битный)</p>
+                        <div class="steam-input-container">
+                            <input type="text"
+                                   class="steam-modal-input"
+                                   id="modalSteamId"
+                                   placeholder="76561198000000000">
+                            <button class="steam-btn-submit" id="modalSteamIdBtn">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <p class="steam-help-text">
+                            Как найти Steam ID? Перейдите на
+                            <a href="https://steamid.io/lookup" target="_blank">steamid.io</a>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="steam-login-option">
+                    <div class="steam-option-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="steam-option-content">
+                        <h4>Ввести никнейм</h4>
+                        <p>Поиск по никнейму Steam</p>
+                        <div class="steam-input-container">
+                            <input type="text"
+                                   class="steam-modal-input"
+                                   id="modalSteamName"
+                                   placeholder="Ваш никнейм Steam">
+                            <button class="steam-btn-submit" id="modalSteamNameBtn">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="steam-modal-footer">
+            <p class="steam-modal-note">
+                <i class="fas fa-info-circle"></i>
+                Ваши данные Steam не сохраняются на сервере.
+                Вся информация загружается напрямую из Steam API.
+            </p>
+        </div>
+    </div>
+</div>
+
 <!-- Подключаем библиотеки -->
 <script src="/socket.io/socket.io.js"></script>
 <script src="/static/voice-chat.js"></script>
+<!-- Обновленный Steam Integration -->
+<script src="/static/steam-integration.js"></script>
 
 <!-- Подключаем основной скрипт мессенджера -->
 <script src="/static/app.js"></script>
+
+<!-- Инициализация Steam при загрузке страницы -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Инициализация Steam интеграции
+        if (!window.steamIntegration) {
+            window.steamIntegration = new SteamIntegration();
+        }
+
+        // Ручная привязка кнопки Steam в сайдбаре
+        setTimeout(() => {
+            const steamBtn = document.getElementById('steamSidebarBtn');
+            if (steamBtn && !steamBtn.hasAttribute('data-steam-bound')) {
+                steamBtn.setAttribute('data-steam-bound', 'true');
+                steamBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Клик по Steam в сайдбаре');
+                    window.steamIntegration.showSteamUI();
+                });
+            }
+        }, 1000);
+
+        // Проверяем, не находимся ли мы на странице callback
+        if (window.location.search.includes('openid.')) {
+            window.steamIntegration.handleSteamCallback();
+        }
+    });
+</script>
 </body>
 </html>

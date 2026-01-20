@@ -1,0 +1,1550 @@
+/* Стили для Steam интеграции */
+:root {
+    --steam-primary: #171a21;
+    --steam-secondary: #1b2838;
+    --steam-accent: #66c0f4;
+    --steam-accent-dark: #2a475e;
+    --steam-success: #5ba32b;
+    --steam-warning: #e6a32c;
+    --steam-danger: #d93636;
+    --steam-online: #57cbde;
+    --steam-ingame: #90ba3c;
+    --steam-offline: #636363;
+    --steam-text-primary: #ffffff;
+    --steam-text-secondary: #c6d4df;
+    --steam-text-muted: #8f98a0;
+    --steam-border: #32353c;
+    --steam-border-light: #4c5a6b;
+    --steam-shadow: rgba(0, 0, 0, 0.4);
+    --steam-overlay: rgba(0, 0, 0, 0.9);
+}
+
+/* Лончер Steam */
+.steam-launcher {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--steam-primary), var(--steam-secondary));
+    border-radius: 50px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    z-index: 9990;
+    box-shadow: 0 4px 20px var(--steam-shadow);
+    border: 2px solid var(--steam-accent);
+    transition: all 0.3s ease;
+    animation: steam-pulse 3s infinite;
+}
+
+@keyframes steam-pulse {
+    0%, 100% {
+        box-shadow: 0 4px 20px rgba(102, 192, 244, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 30px rgba(102, 192, 244, 0.6);
+    }
+}
+
+.steam-launcher:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(102, 192, 244, 0.8);
+}
+
+.steam-launcher-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--steam-accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--steam-primary);
+}
+
+.steam-launcher-label {
+    color: var(--steam-text-primary);
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* Контейнер Steam */
+.steam-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--steam-primary);
+    color: var(--steam-text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    z-index: 10000;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.steam-container.active {
+    display: flex;
+    animation: steam-fadeIn 0.3s ease;
+}
+
+@keyframes steam-fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Заголовок Steam */
+.steam-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background: var(--steam-secondary);
+    border-bottom: 2px solid var(--steam-accent);
+    height: 80px;
+}
+
+.steam-header-left {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.steam-logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.steam-logo-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--steam-accent);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--steam-primary);
+}
+
+.steam-logo-text {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #66c0f4, #1b9be9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.steam-user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid var(--steam-border);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.steam-user-info:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--steam-accent);
+}
+
+.steam-user-avatar {
+    position: relative;
+    width: 50px;
+    height: 50px;
+}
+
+.steam-user-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.steam-user-status {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    background: var(--steam-offline);
+    border: 2px solid var(--steam-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.steam-user-status i {
+    font-size: 8px;
+    color: white;
+}
+
+.steam-user-status.online {
+    background: var(--steam-online);
+}
+
+.steam-user-status.ingame {
+    background: var(--steam-ingame);
+    animation: steam-pulse 2s infinite;
+}
+
+.steam-user-details h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.steam-user-details p {
+    font-size: 12px;
+    color: var(--steam-text-secondary);
+}
+
+/* Кнопки управления */
+.steam-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.steam-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--steam-text-primary);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.steam-btn:hover {
+    background: var(--steam-accent);
+    transform: translateY(-2px);
+}
+
+.steam-btn:active {
+    transform: translateY(0);
+}
+
+.steam-btn.close-btn {
+    background: rgba(217, 54, 54, 0.2);
+}
+
+.steam-btn.close-btn:hover {
+    background: var(--steam-danger);
+}
+
+/* Основная область */
+.steam-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Боковая панель */
+.steam-sidebar {
+    width: 280px;
+    background: var(--steam-secondary);
+    border-right: 1px solid var(--steam-border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+}
+
+.steam-nav {
+    padding: 0 15px;
+    margin-bottom: 25px;
+}
+
+.steam-nav-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    background: transparent;
+    color: var(--steam-text-secondary);
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    position: relative;
+}
+
+.steam-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--steam-text-primary);
+}
+
+.steam-nav-btn.active {
+    background: var(--steam-accent-dark);
+    color: var(--steam-accent);
+    font-weight: 600;
+}
+
+.steam-nav-btn i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.steam-badge {
+    position: absolute;
+    right: 15px;
+    background: var(--steam-accent);
+    color: var(--steam-primary);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Панель входа */
+.steam-login-panel {
+    background: rgba(0, 0, 0, 0.3);
+    margin: 20px 15px;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--steam-border);
+    text-align: center;
+}
+
+.steam-login-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.steam-login-header i {
+    font-size: 24px;
+    color: var(--steam-accent);
+}
+
+.steam-login-header h4 {
+    font-size: 16px;
+    color: var(--steam-text-primary);
+}
+
+.steam-login-text {
+    font-size: 13px;
+    color: var(--steam-text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.steam-login-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--steam-accent), #1b9be9);
+    color: var(--steam-primary);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+}
+
+.steam-login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 192, 244, 0.4);
+}
+
+.steam-login-btn:active {
+    transform: translateY(0);
+}
+
+.steam-login-alternative {
+    border-top: 1px solid var(--steam-border);
+    padding-top: 15px;
+}
+
+.steam-login-alternative p {
+    font-size: 12px;
+    color: var(--steam-text-muted);
+    margin-bottom: 10px;
+}
+
+.steam-input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.steam-input {
+    flex: 1;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--steam-border);
+    border-radius: 6px;
+    color: var(--steam-text-primary);
+    font-size: 13px;
+}
+
+.steam-input:focus {
+    outline: none;
+    border-color: var(--steam-accent);
+}
+
+/* Статистика */
+.steam-stats {
+    padding: 20px 15px;
+    background: rgba(0, 0, 0, 0.2);
+    margin: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--steam-border);
+}
+
+.steam-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--steam-border);
+}
+
+.steam-stat:last-child {
+    border-bottom: none;
+}
+
+.steam-stat i {
+    color: var(--steam-accent);
+    font-size: 12px;
+    width: 20px;
+}
+
+.steam-stat span {
+    font-size: 13px;
+    color: var(--steam-text-secondary);
+}
+
+.steam-stat-value {
+    color: var(--steam-text-primary) !important;
+    font-weight: 600;
+}
+
+/* Основное содержимое */
+.steam-content {
+    flex: 1;
+    padding: 25px;
+    overflow-y: auto;
+    position: relative;
+}
+
+.steam-tab {
+    display: none;
+    animation: steam-fadeIn 0.3s ease;
+}
+
+.steam-tab.active {
+    display: block;
+}
+
+.steam-tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.steam-tab-header h3 {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.steam-search {
+    position: relative;
+    width: 250px;
+}
+
+.steam-search i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--steam-text-muted);
+    font-size: 14px;
+}
+
+.steam-search input {
+    width: 100%;
+    padding: 12px 12px 12px 38px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--steam-border);
+    border-radius: 8px;
+    color: var(--steam-text-primary);
+    font-size: 14px;
+}
+
+.steam-search input:focus {
+    outline: none;
+    border-color: var(--steam-accent);
+}
+
+/* Список друзей */
+.friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.friend-card {
+    background: var(--steam-secondary);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.friend-card:hover {
+    border-color: var(--steam-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.friend-avatar {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+}
+
+.friend-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.friend-status {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--steam-secondary);
+    border-radius: 50%;
+}
+
+.friend-status.online {
+    background: var(--steam-online);
+}
+
+.friend-status.ingame {
+    background: var(--steam-ingame);
+    animation: steam-pulse 2s infinite;
+}
+
+.friend-status.offline {
+    background: var(--steam-offline);
+}
+
+.friend-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.friend-name {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.friend-status-text {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.friend-status-text.online {
+    background: rgba(87, 203, 222, 0.2);
+    color: var(--steam-online);
+}
+
+.friend-status-text.ingame {
+    background: rgba(144, 186, 60, 0.2);
+    color: var(--steam-ingame);
+}
+
+.friend-game {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.friend-game-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.friend-game-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.friend-game-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.friend-game-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--steam-text-primary);
+}
+
+.friend-game-time {
+    font-size: 11px;
+    color: var(--steam-text-muted);
+}
+
+.friend-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.friend-action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--steam-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.friend-action-btn:hover {
+    background: var(--steam-accent);
+    color: var(--steam-primary);
+}
+
+/* Сетка игр */
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.game-card {
+    background: var(--steam-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--steam-accent);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.game-cover {
+    width: 100%;
+    height: 120px;
+    position: relative;
+    overflow: hidden;
+}
+
+.game-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.game-card:hover .game-cover img {
+    transform: scale(1.05);
+}
+
+.game-playtime {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.game-info {
+    padding: 15px;
+}
+
+.game-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.game-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.game-tag {
+    background: rgba(102, 192, 244, 0.1);
+    color: var(--steam-accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.game-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.game-action-btn {
+    flex: 1;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 6px;
+    color: var(--steam-text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.game-action-btn:hover {
+    background: var(--steam-accent);
+    color: var(--steam-primary);
+}
+
+/* Панель голосового чата */
+.steam-voice-panel {
+    width: 280px;
+    background: var(--steam-secondary);
+    border-left: 1px solid var(--steam-border);
+    padding: 15px;
+}
+
+.steam-voice-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--steam-border);
+}
+
+.steam-voice-header h4 {
+    flex: 1;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.steam-voice-toggle {
+    background: none;
+    border: none;
+    color: var(--steam-text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.steam-voice-content {
+    transition: all 0.3s ease;
+}
+
+.steam-voice-users {
+    margin-bottom: 15px;
+}
+
+.steam-voice-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    transition: all 0.2s ease;
+}
+
+.steam-voice-user:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.steam-voice-user.you {
+    background: rgba(102, 192, 244, 0.1);
+}
+
+.steam-voice-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.steam-voice-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.steam-voice-name {
+    flex: 1;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.steam-voice-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--steam-offline);
+}
+
+.steam-voice-status.speaking {
+    background: var(--steam-ingame);
+    animation: steam-pulse 1s infinite;
+}
+
+.steam-voice-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.steam-voice-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.steam-voice-btn.mute-toggle {
+    background: rgba(87, 203, 222, 0.2);
+    color: var(--steam-online);
+}
+
+.steam-voice-btn.mute-toggle:hover {
+    background: var(--steam-online);
+    color: var(--steam-primary);
+}
+
+.steam-voice-btn.disconnect {
+    background: rgba(217, 54, 54, 0.2);
+    color: var(--steam-danger);
+}
+
+.steam-voice-btn.disconnect:hover {
+    background: var(--steam-danger);
+    color: white;
+}
+
+.steam-voice-btn.invite {
+    background: rgba(102, 192, 244, 0.2);
+    color: var(--steam-accent);
+}
+
+.steam-voice-btn.invite:hover {
+    background: var(--steam-accent);
+    color: var(--steam-primary);
+}
+
+/* Карточка приглашения */
+.steam-invite-card {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    background: var(--steam-secondary);
+    border-radius: 12px;
+    border: 2px solid var(--steam-accent);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    z-index: 100;
+    animation: steam-slideUp 0.3s ease;
+}
+
+@keyframes steam-slideUp {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.steam-invite-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(102, 192, 244, 0.1);
+    border-bottom: 1px solid var(--steam-border);
+}
+
+.steam-invite-header h4 {
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.steam-btn-close {
+    background: none;
+    border: none;
+    color: var(--steam-text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.steam-invite-content {
+    padding: 15px;
+}
+
+.steam-invite-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.steam-invite-user img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.steam-invite-details h5 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.steam-invite-details p {
+    font-size: 12px;
+    color: var(--steam-text-secondary);
+}
+
+.steam-invite-game {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.steam-invite-game img {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.steam-invite-game-info p {
+    font-size: 11px;
+    color: var(--steam-text-muted);
+    margin-bottom: 2px;
+}
+
+.steam-invite-game-info h6 {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.steam-invite-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.steam-btn-accept, .steam-btn-decline {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.steam-btn-accept {
+    background: var(--steam-success);
+    color: white;
+}
+
+.steam-btn-accept:hover {
+    background: #4a8a25;
+}
+
+.steam-btn-decline {
+    background: rgba(217, 54, 54, 0.2);
+    color: var(--steam-danger);
+}
+
+.steam-btn-decline:hover {
+    background: var(--steam-danger);
+    color: white;
+}
+
+/* Загрузка */
+.steam-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--steam-overlay);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10005;
+}
+
+.steam-loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 3px solid var(--steam-border);
+    border-top-color: var(--steam-accent);
+    border-radius: 50%;
+    animation: steam-spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes steam-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.steam-loading-text {
+    color: var(--steam-text-primary);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Модальное окно */
+.steam-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10020;
+    backdrop-filter: blur(5px);
+}
+
+.steam-modal.active {
+    display: flex;
+    animation: steam-fadeIn 0.3s ease;
+}
+
+.steam-modal-content {
+    background: var(--steam-primary);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 800px;
+    border: 2px solid var(--steam-accent);
+    overflow: hidden;
+    animation: steam-scaleIn 0.3s ease;
+}
+
+@keyframes steam-scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.steam-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    background: var(--steam-secondary);
+    border-bottom: 1px solid var(--steam-border);
+}
+
+.steam-modal-header h3 {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.steam-modal-close {
+    background: none;
+    border: none;
+    color: var(--steam-text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.steam-modal-body {
+    padding: 30px;
+}
+
+.steam-login-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.steam-login-option {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--steam-border);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.steam-login-option:hover {
+    border-color: var(--steam-accent);
+    background: rgba(102, 192, 244, 0.05);
+}
+
+.steam-option-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--steam-accent-dark);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--steam-accent);
+    flex-shrink: 0;
+}
+
+.steam-option-content {
+    flex: 1;
+}
+
+.steam-option-content h4 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: var(--steam-text-primary);
+}
+
+.steam-option-content p {
+    font-size: 13px;
+    color: var(--steam-text-secondary);
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.steam-btn-login {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--steam-accent), #1b9be9);
+    color: var(--steam-primary);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.steam-btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 192, 244, 0.4);
+}
+
+.steam-input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.steam-modal-input {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--steam-border);
+    border-radius: 8px;
+    color: var(--steam-text-primary);
+    font-size: 14px;
+}
+
+.steam-modal-input:focus {
+    outline: none;
+    border-color: var(--steam-accent);
+}
+
+.steam-btn-submit {
+    padding: 12px 20px;
+    background: var(--steam-accent);
+    color: var(--steam-primary);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.steam-btn-submit:hover {
+    background: #4aa8e8;
+}
+
+.steam-help-text {
+    font-size: 12px !important;
+    color: var(--steam-text-muted) !important;
+}
+
+.steam-help-text a {
+    color: var(--steam-accent);
+    text-decoration: none;
+}
+
+.steam-help-text a:hover {
+    text-decoration: underline;
+}
+
+.steam-modal-footer {
+    padding: 15px 25px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid var(--steam-border);
+    text-align: center;
+}
+
+.steam-modal-note {
+    font-size: 12px;
+    color: var(--steam-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Пустые состояния */
+.steam-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--steam-text-muted);
+}
+
+.steam-empty-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+}
+
+.steam-empty-state h4 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: var(--steam-text-secondary);
+}
+
+.steam-empty-state p {
+    font-size: 14px;
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    .steam-sidebar {
+        width: 240px;
+    }
+
+    .steam-voice-panel {
+        width: 240px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .steam-main {
+        flex-direction: column;
+    }
+
+    .steam-sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--steam-border);
+        flex-direction: row;
+        padding: 15px;
+    }
+
+    .steam-nav {
+        display: flex;
+        flex: 1;
+        gap: 10px;
+        margin-bottom: 0;
+        padding: 0;
+    }
+
+    .steam-nav-btn {
+        flex: 1;
+        flex-direction: column;
+        text-align: center;
+        padding: 12px;
+        font-size: 12px;
+    }
+
+    .steam-nav-btn span:not(.steam-badge) {
+        display: none;
+    }
+
+    .steam-login-panel,
+    .steam-stats {
+        display: none !important;
+    }
+
+    .steam-voice-panel {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--steam-border);
+    }
+}
+
+@media (max-width: 768px) {
+    .steam-header {
+        flex-direction: column;
+        height: auto;
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .steam-header-left {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .steam-logo-text {
+        display: none;
+    }
+
+    .steam-tab-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .steam-search {
+        width: 100%;
+    }
+
+    .games-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .steam-invite-card {
+        width: calc(100% - 40px);
+    }
+
+    .steam-modal-content {
+        width: 95%;
+        max-width: 500px;
+    }
+
+    .steam-login-option {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .steam-option-icon {
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .steam-nav-btn i {
+        font-size: 18px;
+    }
+
+    .friend-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .friend-info {
+        text-align: center;
+    }
+
+    .friend-game {
+        justify-content: center;
+    }
+
+    .friend-actions {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .steam-launcher {
+        bottom: 10px;
+        right: 10px;
+        padding: 10px 15px;
+    }
+
+    .steam-launcher-label {
+        display: none;
+    }
+    /* Бейдж для Steam */
+    .server-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: var(--accent);
+        color: white;
+        font-size: 11px;
+        font-weight: bold;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        border: 2px solid var(--bg-primary);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    /* Анимация при наведении на иконку Steam */
+    .server-icon:hover .server-badge {
+        animation: none;
+        transform: scale(1.1);
+    }
+
+    /* Подсказка для иконки Steam */
+    .server-icon[title] {
+        position: relative;
+    }
+
+    .server-icon[title]:hover::after {
+        content: attr(title);
+        position: absolute;
+        left: 50px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        white-space: nowrap;
+        z-index: 1000;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        animation: fadeIn 0.2s ease;
+    }
+
+    /* Индикатор активности Steam */
+    .server-icon.active {
+        background: var(--accent);
+    }
+
+    .server-icon.active i {
+        color: white;
+    }
+}

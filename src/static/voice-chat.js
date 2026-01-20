@@ -20,7 +20,13 @@ class VoiceChat {
         this.connectionAttempts = 0;
         this.maxConnectionAttempts = 3;
         this.speakingThreshold = 0.05;
-        this.audioContainer = null; // Контейнер для аудио элементов
+        this.audioContainer = null;
+        this.turnConfig = null;
+        this.forceRelay = false;
+        this.turnCredentials = {
+            username: 'lamax',
+            credential: 'lamax_password_2024'
+        };
 
         console.log('🎤 VoiceChat инициализирован');
     }
@@ -68,7 +74,6 @@ class VoiceChat {
         } catch (error) {
             console.error('❌ Ошибка доступа к микрофону:', error);
 
-            // Показываем помощь по микрофону
             if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
                 this.showMicrophoneHelp();
             }
@@ -279,11 +284,76 @@ class VoiceChat {
     }
 
     async getWebRTCConfig() {
-        const response = await fetch('/api/webrtc/config');
-        if (!response.ok) {
-            throw new Error('Не удалось получить конфигурацию');
+        try {
+            const response = await fetch('/api/webrtc/config');
+            if (!response.ok) {
+                throw new Error('Не удалось получить конфигурацию');
+            }
+            const config = await response.json();
+
+            config.iceServers.push({
+                urls: [
+                    'turn:193.233.86.5:3478?transport=udp',
+                    'turn:193.233.86.5:3478?transport=tcp',
+                    'turns:193.233.86.5:5349?transport=tcp'
+                ],
+                username: this.turnCredentials.username,
+                credential: this.turnCredentials.credential,
+                credentialType: 'password'
+            });
+
+            config.iceServers.push({
+                urls: 'turn:openrelay.metered.ca:80',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            });
+
+            config.iceServers.push({
+                urls: 'turn:openrelay.metered.ca:443',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            });
+
+            config.iceServers.push({
+                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            });
+
+            this.turnConfig = config;
+            return config;
+        } catch (error) {
+            console.error('❌ Ошибка получения конфигурации:', error);
+            return {
+                websocketUrl: `wss://${window.location.hostname}/webrtc`,
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    {
+                        urls: [
+                            'turn:193.233.86.5:3478?transport=udp',
+                            'turn:193.233.86.5:3478?transport=tcp',
+                            'turns:193.233.86.5:5349?transport=tcp'
+                        ],
+                        username: this.turnCredentials.username,
+                        credential: this.turnCredentials.credential,
+                        credentialType: 'password'
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:80',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    }
+                ]
+            };
         }
-        return await response.json();
     }
 
     handleWebSocketMessage(message) {
@@ -349,6 +419,10 @@ class VoiceChat {
             case 'ice-candidate':
                 this.handleRTCMessage(message);
                 break;
+
+            case 'server-config':
+                console.log('⚙️ Конфигурация сервера:', message);
+                break;
         }
     }
 
@@ -384,7 +458,10 @@ class VoiceChat {
                         }));
                         console.log(`📤 Answer отправлен к ${peerId}`);
                     })
-                    .catch(error => console.error(`❌ Ошибка обработки offer от ${peerId}:`, error));
+                    .catch(error => {
+                        console.error(`❌ Ошибка обработки offer от ${peerId}:`, error);
+                        this.reconnectPeer(peerId);
+                    });
                 break;
 
             case 'answer':
@@ -393,16 +470,33 @@ class VoiceChat {
                     .then(() => {
                         console.log(`✅ Answer обработан для ${peerId}`);
                     })
-                    .catch(error => console.error(`❌ Ошибка обработки answer от ${peerId}:`, error));
+                    .catch(error => {
+                        console.error(`❌ Ошибка обработки answer от ${peerId}:`, error);
+                        this.reconnectPeer(peerId);
+                    });
                 break;
 
             case 'ice-candidate':
                 if (message.candidate) {
+                    console.log(`🧊 Добавляю ICE кандидат от ${peerId}:`,
+                        message.candidate.type || 'unknown');
+
                     pc.addIceCandidate(new RTCIceCandidate(message.candidate))
                         .then(() => {
-                            console.log(`✅ ICE candidate добавлен от ${peerId}`);
+                            console.log(`✅ ICE кандидат добавлен от ${peerId}`);
                         })
-                        .catch(error => console.error(`❌ Ошибка добавления ICE candidate от ${peerId}:`, error));
+                        .catch(error => {
+                            console.error(`❌ Ошибка добавления ICE кандидата от ${peerId}:`, error);
+
+                            if (!error.toString().includes('closed')) {
+                                setTimeout(() => {
+                                    if (pc.remoteDescription) {
+                                        pc.addIceCandidate(new RTCIceCandidate(message.candidate))
+                                            .catch(e => console.log('Вторая попытка тоже не удалась:', e));
+                                    }
+                                }, 100);
+                            }
+                        });
                 }
                 break;
         }
@@ -417,43 +511,56 @@ class VoiceChat {
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' },
                 { urls: 'stun:stun3.l.google.com:19302' },
-                // TURN серверы для лучшей совместимости
                 {
-                    urls: 'turn:turn.bistri.com:80',
-                    credential: 'homeo',
-                    username: 'homeo'
+                    urls: [
+                        'turn:193.233.86.5:3478?transport=udp',
+                        'turn:193.233.86.5:3478?transport=tcp',
+                        'turns:193.233.86.5:5349?transport=tcp'
+                    ],
+                    username: this.turnCredentials.username,
+                    credential: this.turnCredentials.credential,
+                    credentialType: 'password'
                 },
                 {
-                    urls: 'turn:turn.anyfirewall.com:443?transport=tcp',
-                    credential: 'webrtc',
-                    username: 'webrtc'
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
                 }
             ],
-            iceTransportPolicy: 'all',
-            rtcpMuxPolicy: 'require',
-            bundlePolicy: 'max-bundle'
+            iceTransportPolicy: this.forceRelay ? 'relay' : 'all',
+            iceCandidatePoolSize: 10,
+            bundlePolicy: 'max-bundle',
+            rtcpMuxPolicy: 'require'
         };
+
+        console.log('ICE Servers конфигурация:', configuration.iceServers);
 
         const pc = new RTCPeerConnection(configuration);
 
-        // Обработчик получения удаленного трека (самое важное!)
         pc.ontrack = (event) => {
-            console.log(`🔊 AUDIO TRACK получен от ${peerId}`, event.track.kind, event.track.readyState);
+            console.log(`🔊 Получен трек от ${peerId}:`, event.track.kind, event.streams.length);
 
-            // Получаем поток
+            if (event.track.kind !== 'audio') {
+                console.warn('Получен не аудио трек');
+                return;
+            }
+
             const stream = event.streams[0];
             if (!stream) {
-                console.warn('⚠️ Получен track без stream');
+                console.error('Нет потока в событии ontrack');
                 return;
             }
 
-            // Убедимся, что это аудио трек
-            if (event.track.kind !== 'audio') {
-                console.log('❌ Получен не аудио трек:', event.track.kind);
-                return;
-            }
-
-            // Создаем или получаем аудио элемент
             let audio = this.remoteAudios.get(peerId);
             if (!audio) {
                 audio = document.createElement('audio');
@@ -465,7 +572,6 @@ class VoiceChat {
                 audio.volume = 1.0;
                 audio.style.display = 'none';
 
-                // Добавляем в специальный контейнер
                 if (!this.audioContainer) {
                     this.audioContainer = document.createElement('div');
                     this.audioContainer.id = 'vc-audio-container';
@@ -474,60 +580,61 @@ class VoiceChat {
                 }
                 this.audioContainer.appendChild(audio);
                 this.remoteAudios.set(peerId, audio);
-
-                console.log(`✅ Аудио элемент создан для ${peerId}`);
             }
 
-            // Устанавливаем поток
             audio.srcObject = stream;
 
-            // Попытка воспроизведения
             const playAudio = () => {
                 audio.play().then(() => {
                     console.log(`✅ Аудио воспроизводится от ${peerId}`);
                     this.updatePeerAudioStatus(peerId, true);
 
-                    // Проверяем, есть ли звук
                     setTimeout(() => {
-                        if (audio.readyState >= 2) { // HAVE_ENOUGH_DATA
-                            console.log(`✅ Аудио от ${peerId} готово к воспроизведению`);
-                        }
-                    }, 1000);
-
+                        console.log(`Аудио состояние ${peerId}:`, {
+                            readyState: audio.readyState,
+                            currentTime: audio.currentTime,
+                            paused: audio.paused,
+                            volume: audio.volume
+                        });
+                    }, 100);
                 }).catch(err => {
-                    console.warn(`⚠️ Ошибка воспроизведения аудио от ${peerId}:`, err.message);
-
-                    // Пытаемся воспроизвести при клике
-                    const tryOnce = () => {
-                        audio.play().catch(e => console.log('Еще одна попытка не удалась:', e));
-                        document.body.removeEventListener('click', tryOnce);
+                    console.warn(`Ошибка воспроизведения от ${peerId}:`, err.message);
+                    const tryPlayOnClick = () => {
+                        audio.play().catch(e => console.log('Еще одна попытка:', e));
+                        document.removeEventListener('click', tryPlayOnClick);
                     };
-                    document.body.addEventListener('click', tryOnce, { once: true });
+                    document.addEventListener('click', tryPlayOnClick, { once: true });
                 });
             };
 
-            // Ждем когда трек будет готов
             event.track.onunmute = () => {
-                console.log(`🔊 Трек от ${peerId} разблокирован`);
+                console.log(`🔊 Трек ${peerId} разблокирован`);
                 playAudio();
             };
 
-            // Если трек уже не заблокирован, воспроизводим сразу
-            if (event.track.readyState === 'live' && !event.track.muted) {
+            if (event.track.readyState === 'live') {
                 playAudio();
             }
 
-            // Логируем изменения состояния трека
-            event.track.onended = () => console.log(`🔇 Трек от ${peerId} завершен`);
-            event.track.onmute = () => console.log(`🔇 Трек от ${peerId} заблокирован`);
-
-            // Настраиваем анализ аудио
             this.setupRemoteAudioAnalysis(peerId, stream);
         };
 
-        // Обработчик ICE кандидатов
         pc.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log(`🧊 ICE кандидат для ${peerId}:`, event.candidate.type,
+                    event.candidate.protocol, event.candidate.address);
+
+                if (event.candidate.type === 'relay') {
+                    console.log(`✅ Используется TURN (реле) для ${peerId}`);
+                    this.updateConnectionInfo(peerId, 'relay');
+                } else if (event.candidate.type === 'srflx') {
+                    console.log(`📡 Используется STUN (публичный IP) для ${peerId}`);
+                    this.updateConnectionInfo(peerId, 'direct');
+                } else if (event.candidate.type === 'host') {
+                    console.log(`🏠 Локальный кандидат для ${peerId}`);
+                    this.updateConnectionInfo(peerId, 'local');
+                }
+
                 this.websocket.send(JSON.stringify({
                     type: 'ice-candidate',
                     candidate: event.candidate,
@@ -535,104 +642,105 @@ class VoiceChat {
                     roomId: this.roomId,
                     senderPeerId: this.peerId
                 }));
-                console.log(`🧊 ICE candidate отправлен к ${peerId}`);
+            } else {
+                console.log(`✅ Все ICE кандидаты собраны для ${peerId}`);
             }
         };
 
-        // Обработчик состояния соединения
-        pc.onconnectionstatechange = () => {
-            console.log(`🔗 Состояние соединения с ${peerId}: ${pc.connectionState}`);
-            if (pc.connectionState === 'connected') {
-                console.log(`✅ Соединение с ${peerId} установлено!`);
-                this.showNotification(`✅ Соединение с ${this.peers.get(peerId)?.username || 'участником'} установлено`, 'success');
-            } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-                console.warn(`⚠️ Проблема с соединением ${peerId}: ${pc.connectionState}`);
-                // Попытка переподключения
-                setTimeout(() => {
-                    if (this.peers.has(peerId) && pc.connectionState !== 'connected') {
-                        console.log(`🔄 Пытаемся переподключиться к ${peerId}`);
-                        this.removePeer(peerId);
-                        this.addPeer(peerId,
-                            this.peers.get(peerId)?.userId,
-                            this.peers.get(peerId)?.username,
-                            this.peers.get(peerId)?.avatar
-                        );
-                    }
-                }, 2000);
-            }
-        };
-
-        // Обработчик ICE состояния
         pc.oniceconnectionstatechange = () => {
-            console.log(`🧊 ICE состояние с ${peerId}: ${pc.iceConnectionState}`);
-            if (pc.iceConnectionState === 'failed') {
-                console.warn(`❌ ICE соединение с ${peerId} завершилось ошибкой`);
-                // Попробуем перезапустить ICE
-                try {
-                    pc.restartIce();
-                } catch (e) {
-                    console.log('Не удалось перезапустить ICE:', e);
-                }
+            console.log(`🧊 ICE состояние ${peerId}:`, pc.iceConnectionState);
+
+            switch(pc.iceConnectionState) {
+                case 'connected':
+                    console.log(`✅ Соединение с ${peerId} установлено!`);
+                    this.showNotification(`✅ Соединение с ${this.peers.get(peerId)?.username || 'участником'} установлено`, 'success');
+                    break;
+                case 'failed':
+                    console.warn(`❌ ICE соединение с ${peerId} упало`);
+                    this.forceRelay = true;
+                    this.reconnectPeer(peerId);
+                    break;
+                case 'disconnected':
+                    console.warn(`🔌 Соединение с ${peerId} разорвано`);
+                    break;
+                case 'closed':
+                    console.log(`🔒 Соединение с ${peerId} закрыто`);
+                    break;
             }
         };
 
-        // Обработчик сигнального состояния
-        pc.onsignalingstatechange = () => {
-            console.log(`📶 Сигнальное состояние с ${peerId}: ${pc.signalingState}`);
+        pc.onconnectionstatechange = () => {
+            console.log(`🔗 Состояние соединения ${peerId}:`, pc.connectionState);
         };
 
-        // Добавляем локальные треки ТОЛЬКО если мы не слышим других
+        pc.onsignalingstatechange = () => {
+            console.log(`📶 Сигнальное состояние ${peerId}:`, pc.signalingState);
+        };
+
         if (this.localStream) {
             this.localStream.getTracks().forEach(track => {
-                // Убедимся, что трек не добавляется несколько раз
-                const existingSender = pc.getSenders().find(sender => sender.track === track);
-                if (!existingSender) {
-                    try {
-                        const sender = pc.addTrack(track, this.localStream);
-                        console.log(`✅ Локальный аудио трек добавлен в соединение с ${peerId}`, track.id);
-
-                        // Логируем состояние трека
-                        track.onmute = () => console.log(`🔇 Локальный трек ${track.id} заблокирован`);
-                        track.onunmute = () => console.log(`🔊 Локальный трек ${track.id} разблокирован`);
-                        track.onended = () => console.log(`🔇 Локальный трек ${track.id} завершен`);
-
-                    } catch (error) {
-                        console.error(`❌ Ошибка добавления трека для ${peerId}:`, error);
-                    }
-                } else {
-                    console.log(`⚠️ Трек уже добавлен для ${peerId}`);
+                try {
+                    pc.addTrack(track, this.localStream);
+                    console.log(`✅ Добавлен локальный трек для ${peerId}`);
+                } catch (error) {
+                    console.error(`❌ Ошибка добавления трека для ${peerId}:`, error);
                 }
             });
         }
 
         this.peerConnections.set(peerId, pc);
 
-        // Если это не входящее соединение, создаем offer
-        if (this.localStream && this.peerId) {
-            setTimeout(() => {
-                if (pc.signalingState === 'stable') {
-                    this.createOfferForPeer(pc, peerId);
-                }
-            }, 1000 + Math.random() * 1000); // Случайная задержка для избежания коллизий
-        }
+        setTimeout(() => {
+            if (pc.signalingState === 'stable') {
+                this.createOfferForPeer(pc, peerId);
+            }
+        }, 1000);
 
         return pc;
     }
 
-    createOfferForPeer(pc, peerId) {
-        console.log(`🤝 Создаем offer для ${peerId}`);
+    reconnectPeer(peerId) {
+        console.log(`🔄 Переподключение к ${peerId} с принудительным TURN`);
 
-        pc.createOffer({
+        if (this.peerConnections.has(peerId)) {
+            const oldPc = this.peerConnections.get(peerId);
+            oldPc.close();
+            this.peerConnections.delete(peerId);
+        }
+
+        if (this.remoteAudios.has(peerId)) {
+            const audio = this.remoteAudios.get(peerId);
+            audio.pause();
+            audio.srcObject = null;
+            if (audio.parentNode) {
+                audio.parentNode.removeChild(audio);
+            }
+            this.remoteAudios.delete(peerId);
+        }
+
+        setTimeout(() => {
+            if (this.peers.has(peerId)) {
+                this.createPeerConnection(peerId);
+            }
+        }, 1000);
+    }
+
+    createOfferForPeer(pc, peerId) {
+        console.log(`🤝 Создаю offer для ${peerId}`);
+
+        const options = {
             offerToReceiveAudio: true,
             offerToReceiveVideo: false,
-            voiceActivityDetection: true
-        })
+            voiceActivityDetection: true,
+            iceRestart: false
+        };
+
+        pc.createOffer(options)
             .then(offer => {
                 console.log(`✅ Offer создан для ${peerId}`);
-                // Устанавливаем битрейт для лучшего качества
-                if (offer.sdp) {
-                    offer.sdp = offer.sdp.replace(/a=mid:0/g, 'a=mid:0\r\nb=AS:64');
-                }
+
+                offer.sdp = this.optimizeSDP(offer.sdp);
+
                 return pc.setLocalDescription(offer);
             })
             .then(() => {
@@ -647,14 +755,33 @@ class VoiceChat {
             })
             .catch(error => {
                 console.error(`❌ Ошибка создания offer для ${peerId}:`, error);
-                // Повторная попытка через 2 секунды
+
                 setTimeout(() => {
-                    if (this.peerConnections.has(peerId) && this.peerConnections.get(peerId).signalingState === 'stable') {
-                        console.log(`🔄 Повторная попытка создания offer для ${peerId}`);
+                    if (this.peerConnections.has(peerId)) {
+                        console.log(`🔄 Повторная попытка offer для ${peerId}`);
                         this.createOfferForPeer(this.peerConnections.get(peerId), peerId);
                     }
                 }, 2000);
             });
+    }
+
+    optimizeSDP(sdp) {
+        let lines = sdp.split('\r\n');
+        let optimized = [];
+
+        lines.forEach(line => {
+            if (line.startsWith('a=rtpmap:')) {
+                if (line.includes('opus')) {
+                    line = line.replace(/a=rtpmap:(\d+) opus/, 'a=rtpmap:$1 opus/48000/2');
+                }
+            }
+            optimized.push(line);
+        });
+
+        optimized.push('b=AS:64');
+        optimized.push('b=TIAS:64000');
+
+        return optimized.join('\r\n');
     }
 
     addPeer(peerId, userId, username, avatar) {
@@ -674,7 +801,6 @@ class VoiceChat {
             audioLevel: 0
         });
 
-        // Немедленно создаем соединение, если его еще нет
         if (!this.peerConnections.has(peerId)) {
             this.createPeerConnection(peerId);
         } else {
@@ -690,14 +816,12 @@ class VoiceChat {
             const peer = this.peers.get(peerId);
             console.log(`➖ Удаляем пира: ${peer.username} (${peerId})`);
 
-            // Закрываем соединение
             if (this.peerConnections.has(peerId)) {
                 const pc = this.peerConnections.get(peerId);
                 pc.close();
                 this.peerConnections.delete(peerId);
             }
 
-            // Останавливаем и удаляем аудио элемент
             if (this.remoteAudios.has(peerId)) {
                 const audio = this.remoteAudios.get(peerId);
                 audio.pause();
@@ -799,6 +923,31 @@ class VoiceChat {
         }
     }
 
+    updateConnectionInfo(peerId, connectionType) {
+        const peerCard = document.querySelector(`.vc-participant-card[data-peer-id="${peerId}"]`);
+        if (peerCard) {
+            const statusEl = peerCard.querySelector('.vc-participant-device');
+            if (statusEl) {
+                let text = 'Онлайн';
+                let color = 'var(--vc-text-secondary)';
+
+                if (connectionType === 'relay') {
+                    text = '📡 Через сервер';
+                    color = 'var(--vc-warning)';
+                } else if (connectionType === 'direct') {
+                    text = '🔗 Прямое соединение';
+                    color = 'var(--vc-success)';
+                } else if (connectionType === 'local') {
+                    text = '🏠 В одной сети';
+                    color = 'var(--vc-info)';
+                }
+
+                statusEl.innerHTML = `<i class="fas fa-headphones"></i> ${text}`;
+                statusEl.style.color = color;
+            }
+        }
+    }
+
     joinRoom() {
         if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
             this.websocket.send(JSON.stringify({
@@ -842,7 +991,6 @@ class VoiceChat {
     disconnect() {
         console.log('Отключение от голосового чата...');
 
-        // Отправляем сообщение о выходе
         if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
             this.websocket.send(JSON.stringify({
                 type: 'leave-room',
@@ -851,13 +999,11 @@ class VoiceChat {
             }));
         }
 
-        // Закрываем все соединения
         this.peerConnections.forEach((pc, peerId) => {
             pc.close();
         });
         this.peerConnections.clear();
 
-        // Очищаем все аудио элементы
         this.remoteAudios.forEach((audio, peerId) => {
             audio.pause();
             audio.srcObject = null;
@@ -868,7 +1014,6 @@ class VoiceChat {
         });
         this.remoteAudios.clear();
 
-        // Удаляем контейнер для аудио
         if (this.audioContainer && this.audioContainer.parentNode) {
             this.audioContainer.parentNode.removeChild(this.audioContainer);
             this.audioContainer = null;
@@ -876,31 +1021,26 @@ class VoiceChat {
 
         this.peers.clear();
 
-        // Останавливаем локальный стрим
         if (this.localStream) {
             this.localStream.getTracks().forEach(track => track.stop());
             this.localStream = null;
         }
 
-        // Закрываем WebSocket
         if (this.websocket) {
             this.websocket.close();
         }
 
-        // Закрываем аудио контекст
         if (this.audioContext && this.audioContext.state !== 'closed') {
             this.audioContext.close();
             this.audioContext = null;
         }
 
-        // Очищаем интервалы
         if (this.timerInterval) clearInterval(this.timerInterval);
         if (this.pingInterval) clearInterval(this.pingInterval);
 
         this.hideVoiceChatUI();
         this.showNotification('👋 Вы покинули голосовой чат', 'info');
 
-        // Сбрасываем состояние
         this.isConnected = false;
         this.peerId = null;
     }
@@ -908,12 +1048,10 @@ class VoiceChat {
     // ========== UI МЕТОДЫ ==========
 
     showVoiceChatUI() {
-        // Добавляем класс к body чтобы скрыть основной интерфейс
         document.body.classList.add('voice-chat-active');
 
         const html = `
             <div class="voice-chat-container vc-slide-in">
-                <!-- Шапка -->
                 <div class="vc-header">
                     <div class="vc-header-left">
                         <div class="vc-logo">
@@ -952,9 +1090,7 @@ class VoiceChat {
                     </div>
                 </div>
                 
-                <!-- Основная область -->
                 <div class="vc-main">
-                    <!-- Сайдбар участников -->
                     <div class="vc-participants-sidebar">
                         <div class="vc-participants-header">
                             <h3>
@@ -968,7 +1104,6 @@ class VoiceChat {
                         </div>
                         
                         <div class="vc-participants-list" id="vcParticipantsList">
-                            <!-- Список реальных участников будет здесь -->
                         </div>
                         
                         <div class="vc-connection-info">
@@ -983,7 +1118,6 @@ class VoiceChat {
                         </div>
                     </div>
                     
-                    <!-- Основная область чата -->
                     <div class="vc-chat-area">
                         <div class="vc-welcome-message" id="vcWelcomeMessage">
                             <div class="vc-welcome-icon">
@@ -1005,14 +1139,11 @@ class VoiceChat {
                             </div>
                         </div>
                         
-                        <!-- Сетка участников -->
                         <div class="vc-participants-grid" id="vcParticipantsGrid">
-                            <!-- Реальные участники в сетке будут здесь -->
                         </div>
                     </div>
                 </div>
                 
-                <!-- Панель управления -->
                 <div class="vc-control-panel">
                     <div class="vc-control-group">
                         <div class="vc-slider-group">
@@ -1039,13 +1170,11 @@ class VoiceChat {
                     </div>
                 </div>
                 
-                <!-- Экран загрузки -->
                 <div class="vc-loading" id="vcLoading" style="display: flex;">
                     <div class="vc-loading-spinner"></div>
                     <div class="vc-loading-text">Подключение к голосовому чату...</div>
                 </div>
                 
-                <!-- Кнопка возврата -->
                 <a href="#" class="vc-back-to-chat" id="vcBackToChat">
                     <i class="fas fa-arrow-left"></i>
                     Вернуться в чат
@@ -1055,44 +1184,35 @@ class VoiceChat {
 
         document.body.insertAdjacentHTML('beforeend', html);
 
-        // Добавляем себя в список участников
         this.addParticipantToUI('you', this.userId, this.username, this.avatar);
 
-        // Настраиваем обработчики
         this.setupUIControls();
 
-        // Запускаем таймер
         this.startTimer();
 
-        // Запускаем пинг
         this.startPingTest();
     }
 
     setupUIControls() {
-        // Кнопка отключения микрофона
         document.querySelector('.mute-toggle').addEventListener('click', () => {
             this.toggleMute();
         });
 
-        // Кнопка отладки
         document.querySelector('.debug-btn').addEventListener('click', () => {
             this.debug();
         });
 
-        // Кнопка выхода
         document.querySelector('.disconnect').addEventListener('click', () => {
             if (confirm('Покинуть голосовой чат?')) {
                 this.disconnect();
             }
         });
 
-        // Кнопка возврата в чат
         document.getElementById('vcBackToChat').addEventListener('click', (e) => {
             e.preventDefault();
             this.disconnect();
         });
 
-        // Слайдер громкости
         const volumeSlider = document.querySelector('.vc-volume-slider');
         const volumeValue = document.querySelector('.vc-volume-value');
 
@@ -1100,18 +1220,15 @@ class VoiceChat {
             const value = e.target.value;
             volumeValue.textContent = `${value}%`;
 
-            // Устанавливаем громкость для всех аудио элементов
             this.remoteAudios.forEach(audio => {
                 audio.volume = value / 100;
             });
         });
 
-        // Кнопка настроек
         document.getElementById('vcSettingsBtn').addEventListener('click', () => {
             this.showNotification('Настройки будут доступны в следующем обновлении', 'info');
         });
 
-        // Обновляем статус микрофона
         document.getElementById('vcMicStatus').textContent = this.isMuted ? 'Выкл' : 'Вкл';
     }
 
@@ -1119,7 +1236,6 @@ class VoiceChat {
         const isYou = peerId === 'you';
         const avatarUrl = avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId || username}`;
 
-        // Карточка в сайдбаре
         const participantCard = document.createElement('div');
         participantCard.className = `vc-participant-card ${isYou ? 'you' : ''}`;
         participantCard.dataset.peerId = peerId;
@@ -1156,7 +1272,6 @@ class VoiceChat {
 
         document.getElementById('vcParticipantsList').appendChild(participantCard);
 
-        // Карточка в сетке
         const gridCard = document.createElement('div');
         gridCard.className = `vc-grid-participant ${isYou ? 'you' : ''}`;
         gridCard.dataset.peerId = peerId;
@@ -1183,7 +1298,6 @@ class VoiceChat {
 
         document.getElementById('vcParticipantsGrid').appendChild(gridCard);
 
-        // Анимация появления
         setTimeout(() => {
             participantCard.style.opacity = '1';
             participantCard.style.transform = 'translateY(0)';
@@ -1193,7 +1307,6 @@ class VoiceChat {
     }
 
     removeParticipantFromUI(peerId) {
-        // Удаляем из сайдбара
         const sidebarCard = document.querySelector(`.vc-participant-card[data-peer-id="${peerId}"]`);
         if (sidebarCard) {
             sidebarCard.style.animation = 'vc-scaleUp 0.3s ease reverse';
@@ -1204,7 +1317,6 @@ class VoiceChat {
             }, 300);
         }
 
-        // Удаляем из сетки
         const gridCard = document.querySelector(`.vc-grid-participant[data-peer-id="${peerId}"]`);
         if (gridCard) {
             gridCard.style.animation = 'vc-scaleUp 0.3s ease reverse';
@@ -1217,7 +1329,7 @@ class VoiceChat {
     }
 
     updateParticipantCount() {
-        const count = this.peers.size + 1; // +1 для себя
+        const count = this.peers.size + 1;
         document.getElementById('vcParticipantCount').textContent = count;
     }
 
@@ -1339,12 +1451,10 @@ class VoiceChat {
 
         document.body.appendChild(notification);
 
-        // Удаляем уведомление при клике
         notification.querySelector('.vc-notification-close').addEventListener('click', () => {
             notification.remove();
         });
 
-        // Автоматическое удаление через 5 секунд
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.style.animation = 'vc-slideDown 0.3s ease reverse';
@@ -1358,20 +1468,16 @@ class VoiceChat {
     }
 
     hideVoiceChatUI() {
-        // Очищаем интервалы
         if (this.timerInterval) clearInterval(this.timerInterval);
         if (this.pingInterval) clearInterval(this.pingInterval);
 
-        // Удаляем класс с body
         document.body.classList.remove('voice-chat-active');
 
-        // Находим и анимируем закрытие
         const container = document.querySelector('.voice-chat-container');
         if (container) {
             container.style.animation = 'vc-slideOutToRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards';
         }
 
-        // Удаляем все элементы голосового чата с задержкой
         setTimeout(() => {
             const elements = document.querySelectorAll(
                 '.voice-chat-container, .vc-notification'
@@ -1460,8 +1566,6 @@ class VoiceChat {
         document.body.insertAdjacentHTML('beforeend', helpHtml);
     }
 
-    // ========== ОТЛАДКА ==========
-
     debug() {
         console.group('🔍 Отладка VoiceChat');
         console.log('Peer ID:', this.peerId);
@@ -1479,7 +1583,6 @@ class VoiceChat {
         console.log('Количество соединений:', this.peerConnections.size);
         console.log('Количество аудио элементов:', this.remoteAudios.size);
 
-        // Детали о каждом соединении
         console.log('Детали соединений:');
         this.peerConnections.forEach((pc, peerId) => {
             console.group(`Соединение с ${peerId}:`);
@@ -1489,7 +1592,6 @@ class VoiceChat {
             console.log('Получатели:', pc.getReceivers().length);
             console.log('Отправители:', pc.getSenders().length);
 
-            // Треки получателей
             pc.getReceivers().forEach(receiver => {
                 if (receiver.track) {
                     console.log(`  Получаемый трек: ${receiver.track.kind}, состояние: ${receiver.track.readyState}, muted: ${receiver.track.muted}`);
@@ -1499,7 +1601,6 @@ class VoiceChat {
             console.groupEnd();
         });
 
-        // Проверяем аудио элементы
         console.log('Аудио элементы:');
         this.remoteAudios.forEach((audio, peerId) => {
             console.group(`Аудио ${peerId}:`);
@@ -1520,7 +1621,6 @@ class VoiceChat {
             console.groupEnd();
         });
 
-        // Проверяем WebRTC поддержку
         console.log('WebRTC поддержка:');
         console.log('RTCPeerConnection:', !!window.RTCPeerConnection);
         console.log('getUserMedia:', !!navigator.mediaDevices?.getUserMedia);
@@ -1528,10 +1628,8 @@ class VoiceChat {
 
         console.groupEnd();
 
-        // Показываем уведомление
         this.showNotification('Отладочная информация выведена в консоль (F12)', 'info');
 
-        // Автоматически проверяем аудио через 2 секунды
         setTimeout(() => {
             this.checkAudioPlayback();
         }, 2000);
@@ -1546,7 +1644,6 @@ class VoiceChat {
                 hasAudio = true;
                 console.log(`✅ Аудио от ${peerId} воспроизводится`);
 
-                // Создаем временный элемент для теста
                 const testAudio = document.createElement('audio');
                 testAudio.srcObject = audio.srcObject;
                 testAudio.volume = 0.5;
@@ -1568,7 +1665,45 @@ class VoiceChat {
 
         console.groupEnd();
     }
+
+    diagnoseNetwork() {
+        console.group('🌐 Диагностика сети');
+
+        const stunServers = [
+            'stun:stun.l.google.com:19302',
+            'stun:stun1.l.google.com:19302'
+        ];
+
+        for (const server of stunServers) {
+            try {
+                const pc = new RTCPeerConnection({ iceServers: [{ urls: server }] });
+                const candidates = [];
+
+                pc.onicecandidate = (e) => {
+                    if (e.candidate) {
+                        candidates.push(e.candidate);
+                        console.log(`${server}:`, e.candidate.type, e.candidate.address);
+                    } else {
+                        console.log(`${server}: Собрано ${candidates.length} кандидатов`);
+                        pc.close();
+                    }
+                };
+
+                pc.createDataChannel('test');
+                pc.createOffer().then(offer => pc.setLocalDescription(offer));
+
+                setTimeout(() => {
+                    pc.close();
+                }, 5000);
+
+            } catch (error) {
+                console.error(`Ошибка проверки ${server}:`, error);
+            }
+        }
+
+        console.groupEnd();
+        this.showNotification('Диагностика сети выполнена, проверьте консоль', 'info');
+    }
 }
 
-// Экспортируем класс
 window.VoiceChat = VoiceChat;

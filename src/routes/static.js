@@ -11,6 +11,8 @@ module.exports = function(app) {
 
     // Раздаем файлы из views
     app.use(express.static(path.join(__dirname, '../views')));
+    app.use(express.static(path.join(__dirname, '../views/css')));
+
 
     // Раздаем файлы из корня
     app.use(express.static(path.join(__dirname, '..')));

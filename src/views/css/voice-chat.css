@@ -1,0 +1,932 @@
+/* Основные стили голосового чата */
+:root {
+    --vc-primary: #5865F2;
+    --vc-primary-dark: #4752C4;
+    --vc-secondary: #57F287;
+    --vc-secondary-dark: #3BA55C;
+    --vc-danger: #ED4245;
+    --vc-danger-dark: #A12D2F;
+    --vc-warning: #FAA81A;
+    --vc-warning-dark: #B27B00;
+    --vc-info: #0D8ABC;
+    --vc-background: #36393F;
+    --vc-background-dark: #2F3136;
+    --vc-background-light: #40444B;
+    --vc-text-primary: #FFFFFF;
+    --vc-text-secondary: #B9BBBE;
+    --vc-text-muted: #72767D;
+    --vc-border: #202225;
+    --vc-border-light: #4F545C;
+    --vc-shadow: rgba(0, 0, 0, 0.3);
+    --vc-overlay: rgba(0, 0, 0, 0.85);
+    --vc-success: #3BA55C;
+    --vc-online: #3BA55C;
+    --vc-offline: #747F8D;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.voice-chat-active {
+    overflow: hidden;
+    position: relative;
+}
+
+/* Контейнер голосового чата */
+.voice-chat-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--vc-background);
+    color: var(--vc-text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: vc-slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Анимации */
+@keyframes vc-slideInFromRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes vc-slideOutToRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes vc-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes vc-scaleUp {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes vc-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes vc-wave {
+    0%, 100% {
+        transform: scaleY(0.3);
+    }
+    50% {
+        transform: scaleY(1);
+    }
+}
+
+/* Заголовок */
+.vc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--vc-background-dark);
+    border-bottom: 1px solid var(--vc-border);
+    height: 70px;
+}
+
+.vc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.vc-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vc-logo-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--vc-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.vc-logo-text {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.vc-room-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 15px;
+    background: var(--vc-background-light);
+    border-radius: 10px;
+    border: 1px solid var(--vc-border-light);
+}
+
+.vc-room-icon {
+    width: 30px;
+    height: 30px;
+    background: var(--vc-primary-dark);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.vc-room-details h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.vc-room-details p {
+    font-size: 12px;
+    color: var(--vc-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.vc-status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--vc-danger);
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.vc-header-right .vc-controls {
+    display: flex;
+    gap: 10px;
+}
+
+/* Основные кнопки управления */
+.vc-control-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: var(--vc-background-light);
+    color: var(--vc-text-primary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.vc-control-btn:hover {
+    background: var(--vc-background);
+    transform: scale(1.05);
+}
+
+.vc-control-btn:active {
+    transform: scale(0.95);
+}
+
+.vc-control-btn.disconnect {
+    background: var(--vc-danger);
+}
+
+.vc-control-btn.disconnect:hover {
+    background: var(--vc-danger-dark);
+}
+
+.vc-control-btn.mute.mute {
+    background: var(--vc-danger);
+}
+
+.vc-control-btn.mute:not(.mute) {
+    background: var(--vc-success);
+}
+
+.vc-icon-mic {
+    color: white;
+}
+
+.vc-icon-mic-muted {
+    color: white;
+}
+
+/* Основная область */
+.vc-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Боковая панель участников */
+.vc-participants-sidebar {
+    width: 280px;
+    background: var(--vc-background-dark);
+    border-right: 1px solid var(--vc-border);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.vc-participants-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--vc-border);
+}
+
+.vc-participants-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.vc-participants-count {
+    background: var(--vc-background-light);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--vc-text-secondary);
+}
+
+.vc-participants-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vc-participants-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.vc-participants-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.vc-participants-list::-webkit-scrollbar-thumb {
+    background: var(--vc-border-light);
+    border-radius: 3px;
+}
+
+/* Карточка участника */
+.vc-participant-card {
+    background: var(--vc-background-light);
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: vc-fadeIn 0.3s ease forwards;
+}
+
+.vc-participant-card:hover {
+    border-color: var(--vc-border-light);
+    transform: translateY(-2px);
+}
+
+.vc-participant-card.speaking {
+    border-color: var(--vc-secondary);
+    background: rgba(87, 242, 135, 0.1);
+}
+
+.vc-participant-card.you {
+    border-color: var(--vc-primary);
+    background: rgba(88, 101, 242, 0.1);
+}
+
+.vc-participant-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.vc-participant-avatar {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+}
+
+.vc-participant-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.vc-participant-status {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background: var(--vc-success);
+    border: 2px solid var(--vc-background-light);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.vc-participant-status.muted {
+    background: var(--vc-danger);
+}
+
+.vc-participant-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vc-participant-name {
+    font-weight: 600;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vc-participant-role {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--vc-text-secondary);
+}
+
+.vc-you-badge {
+    background: var(--vc-primary);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.vc-participant-device {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+}
+
+/* Визуализация аудио */
+.vc-audio-visualization {
+    height: 24px;
+    overflow: hidden;
+}
+
+.vc-audio-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 100%;
+    gap: 2px;
+}
+
+.vc-audio-bar {
+    flex: 1;
+    background: var(--vc-secondary);
+    border-radius: 2px;
+    min-height: 4px;
+    transition: height 0.1s ease;
+}
+
+.vc-participant-card.you .vc-audio-bar {
+    background: var(--vc-primary);
+}
+
+/* Область чата */
+.vc-chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.vc-welcome-message {
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    animation: vc-fadeIn 0.5s ease;
+}
+
+.vc-welcome-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--vc-primary), var(--vc-primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+}
+
+.vc-icon-headphones {
+    color: white;
+}
+
+.vc-welcome-message h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: var(--vc-text-primary);
+}
+
+.vc-welcome-message p {
+    color: var(--vc-text-secondary);
+    margin-bottom: 30px;
+}
+
+/* Сетка участников */
+.vc-participants-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.vc-grid-participant {
+    background: var(--vc-background-dark);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    opacity: 0;
+    transform: scale(0.95);
+    animation: vc-scaleUp 0.3s ease forwards;
+}
+
+.vc-grid-participant:hover {
+    border-color: var(--vc-border-light);
+    transform: translateY(-5px);
+}
+
+.vc-grid-participant.speaking {
+    border-color: var(--vc-secondary);
+    background: rgba(87, 242, 135, 0.1);
+}
+
+.vc-grid-participant.you {
+    border-color: var(--vc-primary);
+    background: rgba(88, 101, 242, 0.1);
+}
+
+.vc-grid-avatar {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 15px;
+}
+
+.vc-grid-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.vc-grid-name {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.vc-grid-status {
+    font-size: 12px;
+    color: var(--vc-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 15px;
+}
+
+.vc-grid-status i {
+    color: var(--vc-online);
+    font-size: 8px;
+}
+
+.vc-sound-waves {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 20px;
+    width: 100%;
+}
+
+.vc-sound-wave {
+    width: 4px;
+    background: var(--vc-secondary);
+    border-radius: 2px;
+    animation: vc-wave 1s ease-in-out infinite;
+}
+
+.vc-grid-participant.you .vc-sound-wave {
+    background: var(--vc-primary);
+}
+
+.vc-sound-wave:nth-child(2) { animation-delay: 0.1s; }
+.vc-sound-wave:nth-child(3) { animation-delay: 0.2s; }
+.vc-sound-wave:nth-child(4) { animation-delay: 0.3s; }
+.vc-sound-wave:nth-child(5) { animation-delay: 0.4s; }
+
+/* Панель управления */
+.vc-control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--vc-background-dark);
+    border-top: 1px solid var(--vc-border);
+    height: 70px;
+}
+
+.vc-control-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.vc-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--vc-background-light);
+    padding: 8px 15px;
+    border-radius: 20px;
+    min-width: 200px;
+}
+
+.vc-slider-group i {
+    color: var(--vc-text-secondary);
+    font-size: 14px;
+}
+
+.vc-volume-slider {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: var(--vc-border-light);
+    border-radius: 2px;
+    outline: none;
+}
+
+.vc-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--vc-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--vc-background-dark);
+}
+
+.vc-volume-value {
+    color: var(--vc-text-secondary);
+    font-size: 12px;
+    min-width: 35px;
+}
+
+.vc-info-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.vc-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--vc-text-secondary);
+}
+
+.vc-stat i {
+    font-size: 12px;
+}
+
+.vc-stat-value {
+    color: var(--vc-text-primary);
+    font-weight: 600;
+}
+
+/* Информация о соединении */
+.vc-connection-info {
+    padding: 15px 20px;
+    border-top: 1px solid var(--vc-border);
+    background: var(--vc-background);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.vc-connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--vc-text-secondary);
+}
+
+.vc-icon-signal {
+    color: var(--vc-success);
+}
+
+.vc-ping {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--vc-text-secondary);
+}
+
+/* Загрузка */
+.vc-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--vc-overlay);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10005;
+}
+
+.vc-loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--vc-border-light);
+    border-top-color: var(--vc-primary);
+    border-radius: 50%;
+    animation: vc-spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes vc-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.vc-loading-text {
+    color: var(--vc-text-primary);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Уведомления */
+.vc-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--vc-background-dark);
+    border-left: 4px solid var(--vc-primary);
+    border-radius: 8px;
+    padding: 15px;
+    min-width: 300px;
+    max-width: 400px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    z-index: 10010;
+    animation: vc-slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px var(--vc-shadow);
+}
+
+@keyframes vc-slideDown {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.vc-notification-icon {
+    font-size: 20px;
+    color: var(--vc-primary);
+}
+
+.vc-notification-content {
+    flex: 1;
+}
+
+.vc-notification-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: var(--vc-text-primary);
+}
+
+.vc-notification-message {
+    font-size: 13px;
+    color: var(--vc-text-secondary);
+    line-height: 1.4;
+}
+
+.vc-notification-close {
+    background: none;
+    border: none;
+    color: var(--vc-text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px;
+    margin: -4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.vc-notification-close:hover {
+    background: var(--vc-background-light);
+    color: var(--vc-text-primary);
+}
+
+.vc-notification.success {
+    border-left-color: var(--vc-success);
+}
+
+.vc-notification.success .vc-notification-icon {
+    color: var(--vc-success);
+}
+
+.vc-notification.error {
+    border-left-color: var(--vc-danger);
+}
+
+.vc-notification.error .vc-notification-icon {
+    color: var(--vc-danger);
+}
+
+.vc-notification.warning {
+    border-left-color: var(--vc-warning);
+}
+
+.vc-notification.warning .vc-notification-icon {
+    color: var(--vc-warning);
+}
+
+/* Кнопка возврата */
+.vc-back-to-chat {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    color: var(--vc-text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    z-index: 10001;
+}
+
+.vc-back-to-chat:hover {
+    color: var(--vc-text-primary);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+    .vc-main {
+        flex-direction: column;
+    }
+
+    .vc-participants-sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 300px;
+        border-right: none;
+        border-bottom: 1px solid var(--vc-border);
+    }
+
+    .vc-participants-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .vc-header {
+        flex-direction: column;
+        gap: 15px;
+        height: auto;
+        padding: 15px;
+    }
+
+    .vc-header-left {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .vc-control-panel {
+        flex-direction: column;
+        gap: 15px;
+        height: auto;
+        padding: 15px;
+    }
+
+    .vc-info-stats {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .vc-participants-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .vc-notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .vc-room-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .vc-control-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .vc-slider-group {
+        min-width: 100%;
+    }
+
+    .vc-participants-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
